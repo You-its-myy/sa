@@ -11,44 +11,7 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
-        /* ... (CSS Kodları Aynı) ... */
-        
-        /* Eklenen sesli arayüz stilleri */
-        #voice-status {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #40444b;
-            border-radius: 4px;
-            color: #ffc107; /* Sarı uyarı rengi */
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        #join-voice-button, #end-call-button {
-            background-color: #43b581;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: background-color 0.2s;
-            width: 80%;
-        }
-        #join-voice-button:hover {
-            background-color: #38976f;
-        }
-        #end-call-button {
-            background-color: #f04747; /* Kırmızı kapatma butonu */
-            display: none; /* Başlangıçta gizle */
-        }
-        #end-call-button:hover {
-            background-color: #c93b3b;
-        }
-
-        /* Diğer stiller (Aynı) */
+        /* CSS KISMI (Değişmedi) */
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background-color: #36393f;
@@ -374,6 +337,39 @@
             margin-right: 5px;
         }
         
+        #voice-status {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #40444b;
+            border-radius: 4px;
+            color: #ffc107;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        #join-voice-button, #end-call-button {
+            background-color: #43b581;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+            width: 80%;
+        }
+        #join-voice-button:hover {
+            background-color: #38976f;
+        }
+        #end-call-button {
+            background-color: #f04747; 
+            display: none; 
+        }
+        #end-call-button:hover {
+            background-color: #c93b3b;
+        }
     </style>
 </head>
 <body>
@@ -459,7 +455,6 @@
         const database = firebase.database();
         const channelsRef = database.ref('channels'); 
         const usersRef = database.ref('users'); 
-        // YENİ: Sesli Sohbet için Firebase Düğümü
         const voiceSignalRef = database.ref('voice_signals/ses-sohbet'); 
 
         // DOM Elementleri
@@ -476,11 +471,11 @@
         const createChannelButton = document.getElementById('create-channel-button');
         const channelHeader = document.getElementById('channel-header');
         
-        // YENİ Ses DOM Elementleri
+        // Ses DOM Elementleri
         const joinVoiceButton = document.getElementById('join-voice-button');
         const endCallButton = document.getElementById('end-call-button');
         const voiceStatus = document.getElementById('voice-status');
-        const remoteAudio = document.getElementById('remote-audio'); // Gelen sesi oynatacak gizli ses etiketi
+        const remoteAudio = document.getElementById('remote-audio');
 
         // Mevcut Durum
         let currentUser = null;
@@ -488,35 +483,41 @@
         let activeChannelId = 'genel-sohbet'; 
         let activeMessagesRef = null;
         
-        // YENİ Ses Durumları
-        let peer = null; // PeerJS nesnesi
-        let localStream = null; // Mikrofon akışı
-        let currentCall = null; // Mevcut WebRTC araması
+        // Ses Durumları
+        let peer = null; 
+        let localStream = null; 
+        let currentCall = null; 
 
         // --- Yardımcı Fonksiyonlar ---
-        // (Aynı)
-        function scrollToBottom() { /* ... */ }
-        function updateMessagePlaceholder() { /* ... */ }
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function updateMessagePlaceholder() {
+            const channelName = document.querySelector(`.channel-item.active`)?.textContent || `#${activeChannelId}`;
+            messageInput.placeholder = `${channelName} kanalına mesaj gönderin`;
+            channelHeader.textContent = channelName;
+        }
         
         // --- PeerJS ve Sesli Sohbet Fonksiyonları ---
 
-        // 1. PeerJS'i Başlat
         function initializePeer(userId) {
-            // Kullanıcının Firebase UID'sini Peer ID olarak kullanıyoruz.
-            // Bu, diğer kullanıcıların bizi bu ID ile aramasına olanak tanır.
+            if (peer) {
+                // Zaten başlatılmışsa tekrar deneme
+                return;
+            }
+            
             peer = new Peer(userId, {
-                // Halka Açık PeerServer adresi (Ücretsiz)
                 host: 'peerjs-server.herokuapp.com',
                 port: 443,
                 secure: true,
                 debug: 2 
             });
 
-            // Başarılı bağlanınca
             peer.on('open', (id) => {
                 console.log('PeerJS ID:', id);
                 voiceStatus.textContent = "Bağlantı Hazır. Katılın.";
-                // Firebase'e Peer ID'mizi kaydedelim ki, diğer kullanıcılar bizi görsün
+                // Firebase'e Peer ID'mizi kaydedelim
                 voiceSignalRef.child(id).set({ 
                     username: currentUser.username, 
                     status: 'online',
@@ -524,98 +525,73 @@
                 });
             });
 
-            // Hata oluşursa
             peer.on('error', (err) => {
                 console.error('PeerJS Hatası:', err);
                 voiceStatus.textContent = `Hata: ${err.type}. Yeniden Dene.`;
             });
             
-            // Gelen aramaları dinle
             peer.on('call', (call) => {
-                // Arama geldi, mikrofon izni isteyip cevap verelim
                 if (localStream) {
                     voiceStatus.textContent = "Gelen Aramaya Cevaplanıyor...";
                     answerCall(call, localStream);
                 } else {
-                    voiceStatus.textContent = "Mikrofon bekleniyor, lütfen tekrar deneyin.";
+                    // Mikrofon alınıp cevaplanacak
                     getMediaStream().then(stream => {
-                        answerCall(call, stream);
-                    }).catch(() => {
-                        // Eğer mikrofon alınamazsa, aramayı reddetmek için boş bir akışla cevap verilebilir
-                        // Veya direkt arama sonlandırılır.
-                        call.close();
-                    });
+                        if (stream) answerCall(call, stream);
+                        else call.close();
+                    }).catch(() => call.close());
                 }
             });
         }
         
-        // 2. Mikrofon Akışını Alma
         async function getMediaStream() {
             try {
-                // Mikrofon izni iste
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                voiceStatus.textContent = "Mikrofon Aktif. Sesli Kanala Katılın.";
                 return localStream;
             } catch (err) {
                 console.error("Mikrofon erişimi reddedildi:", err);
                 voiceStatus.textContent = "Mikrofon izni reddedildi!";
-                alert("Sesli sohbete katılmak için mikrofon izni gereklidir.");
                 localStream = null;
                 return null;
             }
         }
         
-        // 3. Aramayı Başlatma (Call)
         function startCall(targetPeerId, stream) {
             currentCall = peer.call(targetPeerId, stream);
 
             currentCall.on('stream', (remoteStream) => {
-                // Karşı tarafın ses akışı geldi
                 playRemoteStream(remoteStream);
             });
             
             currentCall.on('close', endCall);
-
-            currentCall.on('error', (err) => {
-                console.error("Arama Hatası:", err);
-                endCall();
-            });
+            currentCall.on('error', (err) => { console.error("Arama Hatası:", err); endCall(); });
 
             joinVoiceButton.style.display = 'none';
             endCallButton.style.display = 'block';
             voiceStatus.textContent = `Arama Yapılıyor: ${targetPeerId}`;
         }
         
-        // 4. Aramayı Cevaplama
         function answerCall(call, stream) {
             currentCall = call;
             call.answer(stream); 
 
             call.on('stream', (remoteStream) => {
-                // Karşı tarafın ses akışı geldi
                 playRemoteStream(remoteStream);
             });
             
             call.on('close', endCall);
-
-            call.on('error', (err) => {
-                console.error("Arama Cevaplama Hatası:", err);
-                endCall();
-            });
+            call.on('error', (err) => { console.error("Arama Cevaplama Hatası:", err); endCall(); });
             
             joinVoiceButton.style.display = 'none';
             endCallButton.style.display = 'block';
             voiceStatus.textContent = `Bağlandı: ${call.peer}`;
         }
         
-        // 5. Ses Akışını Oynatma
         function playRemoteStream(remoteStream) {
-            // Gelen sesi HTML <audio> etiketinde oynat
             remoteAudio.srcObject = remoteStream;
             voiceStatus.textContent = "Ses Bağlantısı Aktif!";
         }
         
-        // 6. Aramayı Sonlandırma
         function endCall() {
             if (currentCall) {
                 currentCall.close();
@@ -623,7 +599,6 @@
             }
 
             if (localStream) {
-                // Mikrofonu kapat
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
             }
@@ -638,24 +613,19 @@
         endCallButton.addEventListener('click', endCall);
 
 
-        // --- Ana Sesli Kanala Katılma Mantığı ---
         joinVoiceButton.addEventListener('click', async () => {
             if (!peer) {
-                voiceStatus.textContent = "PeerJS başlatılıyor...";
                 initializePeer(currentUserId);
-                return;
             }
-
-            // 1. Mikrofonu Al
+            
             const stream = await getMediaStream();
             if (!stream) return;
 
-            // 2. Kanalda Başka Birini Bul
+            // Kendimiz hariç rastgele birini bul
             voiceSignalRef.once('value', (snapshot) => {
                 const peers = snapshot.val();
                 let targetPeerId = null;
 
-                // Kendimiz hariç rastgele birini bul
                 for (const peerId in peers) {
                     if (peerId !== currentUserId) {
                         targetPeerId = peerId;
@@ -664,10 +634,8 @@
                 }
 
                 if (targetPeerId) {
-                    // 3. Arama Başlat
                     startCall(targetPeerId, stream);
                 } else {
-                    // Yalnızız, sadece bekliyoruz
                     voiceStatus.textContent = "Kanalda kimse yok. Birini bekleyin.";
                     joinVoiceButton.style.display = 'none';
                     endCallButton.style.display = 'block'; 
@@ -675,25 +643,224 @@
             });
         });
 
-        // --- Diğer İşlevler (Aynı) ---
+        // --- Kanal Yönetimi ---
 
-        // Kanal Yönetimi, Mesaj Yönetimi ve Kimlik Doğrulama Fonksiyonları
-        // önceki yanıtta verilen haliyle kalmıştır. Sadece aşağıda `auth.onAuthStateChanged` kısmı güncellenmiştir.
-        
-        // ... (loadChannels, switchChannel, loadMessages, displayMessage, messageForm.addEventListener, signupButton.addEventListener fonksiyonları buraya eklenecek) ...
+        createChannelButton.addEventListener('click', () => {
+            const channelName = prompt("Oluşturmak istediğiniz sohbet kanalının adını girin (Örn: oyun, film):");
+            if (channelName) {
+                const safeName = channelName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                if (safeName) {
+                     channelsRef.child(safeName).set({
+                        name: safeName,
+                        title: channelName,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    }).catch(error => {
+                        alert("Kanal oluşturulamadı: " + error.message);
+                    });
+                }
+            }
+        });
 
+
+        function loadChannels() {
+            channelsRef.child('genel-sohbet').once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    channelsRef.child('genel-sohbet').set({
+                        name: 'genel-sohbet',
+                        title: '#genel-sohbet',
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+            
+            channelsRef.on('value', (snapshot) => {
+                channelsList.innerHTML = ''; 
+                
+                snapshot.forEach((childSnapshot) => {
+                    const channelId = childSnapshot.key;
+                    
+                    const channelDiv = document.createElement('div');
+                    channelDiv.className = 'channel-item';
+                    channelDiv.textContent = `#${channelId}`;
+                    channelDiv.dataset.id = channelId;
+
+                    if (channelId === activeChannelId) {
+                        channelDiv.classList.add('active');
+                    }
+
+                    channelDiv.addEventListener('click', () => {
+                        switchChannel(channelId);
+                    });
+                    
+                    channelsList.appendChild(channelDiv);
+                });
+                
+                if (!activeChannelId || !document.querySelector(`[data-id="${activeChannelId}"]`)) {
+                    const firstChannel = snapshot.val() ? Object.keys(snapshot.val())[0] : 'genel-sohbet';
+                    if (firstChannel) {
+                         switchChannel(firstChannel);
+                    }
+                }
+            });
+        }
         
+        function switchChannel(newChannelId) {
+            if (newChannelId === activeChannelId) return;
+
+            if (activeMessagesRef) {
+                activeMessagesRef.off('child_added');
+            }
+            
+            document.querySelectorAll('.channel-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-id="${newChannelId}"]`)?.classList.add('active');
+
+            activeChannelId = newChannelId;
+            messagesContainer.innerHTML = ''; 
+            
+            activeMessagesRef = database.ref(`messages/${activeChannelId}`);
+            loadMessages();
+            updateMessagePlaceholder();
+        }
+
+        // --- Mesaj Yönetimi ---
+        
+        function loadMessages() {
+            if (!activeMessagesRef) {
+                activeMessagesRef = database.ref(`messages/${activeChannelId}`);
+            }
+            
+            activeMessagesRef.on('child_added', (snapshot) => {
+                const message = snapshot.val();
+                
+                const display = (userData) => {
+                    displayMessage(
+                        snapshot.key, 
+                        userData.username || message.username, 
+                        message.text, 
+                        userData.avatarColor || message.avatarColor, 
+                        userData.avatarInitial || message.avatarInitial, 
+                        message.timestamp
+                    );
+                    scrollToBottom();
+                };
+
+                if (message.avatarColor) {
+                    display(message); // Yeni mesajlar için kendi verisini kullan
+                } else {
+                    // Eski mesajlar için user tablosundan çek
+                    usersRef.child(message.userId).once('value').then(userSnap => {
+                        const userData = userSnap.val() || {};
+                        display(userData);
+                    });
+                }
+            });
+        }
+
+        function displayMessage(key, username, text, avatarColor, avatarInitial, timestamp) {
+            if (document.querySelector(`.message[data-key="${key}"]`)) return;
+            
+            const date = new Date(timestamp);
+            const timeString = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.dataset.key = key;
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'msg-avatar';
+            avatarDiv.style.backgroundColor = avatarColor || '#7289da'; 
+            avatarDiv.textContent = avatarInitial || username.charAt(0).toUpperCase();
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'msg-content';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.innerHTML = `<span class="msg-username">${username}</span> <span class="msg-timestamp">${timeString}</span>`;
+
+            const textP = document.createElement('p');
+            textP.className = 'msg-text';
+            textP.textContent = text;
+            
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(textP);
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+
+            if (text && currentUser && activeChannelId) {
+                activeMessagesRef.push({
+                    userId: currentUserId,
+                    username: currentUser.username,
+                    avatarColor: currentUser.avatarColor,
+                    avatarInitial: currentUser.avatarInitial,
+                    text: text,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP 
+                })
+                .then(() => {
+                    messageInput.value = ''; 
+                })
+                .catch(error => {
+                    console.error("Mesaj gönderme hatası:", error);
+                });
+            }
+        });
+
+        // --- Kimlik Doğrulama ve Oturum Yönetimi ---
+
+        // Kaydol ve Başla Butonu Tıklaması (DÜZELTME BURADA)
+        signupButton.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const avatarColor = avatarColorInput.value;
+
+            if (!username) {
+                alert("Lütfen bir kullanıcı adı girin.");
+                return;
+            }
+            
+            signupButton.disabled = true;
+
+            try {
+                // 1. Anonim Giriş Yap
+                let userCredential = await auth.signInAnonymously();
+                const userId = userCredential.user.uid;
+                
+                const avatarInitial = username.charAt(0).toUpperCase();
+
+                // 2. Kullanıcı Bilgilerini Database'e Kaydet/Güncelle
+                await usersRef.child(userId).set({
+                    username: username,
+                    avatarColor: avatarColor,
+                    avatarInitial: avatarInitial
+                });
+                
+                // (onAuthStateChanged bloğu buradan sonra otomatik olarak tetiklenecek)
+
+            } catch (error) {
+                console.error("Kayıt/Giriş Hatası:", error);
+                alert("Kayıt/Giriş sırasında bir hata oluştu: " + error.message);
+            } finally {
+                signupButton.disabled = false;
+            }
+        });
+
         // Çıkış Yapma İşlemi 
         logoutButton.addEventListener('click', async () => {
             try {
-                // Önce PeerJS bağlantısını sonlandır
-                if (peer) {
+                // 1. PeerJS ve Ses temizliği
+                if (peer && currentUserId) {
                     peer.destroy(); 
                     peer = null;
-                    voiceSignalRef.child(currentUserId).remove(); // Firebase'den sil
+                    voiceSignalRef.child(currentUserId).remove(); 
                 }
-                endCall(); // Varsa aktif aramayı kapat
+                endCall(); 
                 
+                // 2. Firebase çıkış
                 await auth.signOut();
             } catch (error) {
                 console.error("Çıkış Hatası:", error);
@@ -701,17 +868,18 @@
         });
 
 
-        // Firebase Auth Durumu Değiştiğinde
+        // Firebase Auth Durumu Değiştiğinde (DÜZELTME BURADA)
         auth.onAuthStateChanged(async (user) => {
             if (user) {
-                // KULLANICI GİRİŞ YAPTI
+                // KULLANICI GİRİŞ YAPTI (Veya anonim bir oturum başlattı)
                 currentUserId = user.uid;
                 
+                // Kullanıcı verilerini Realtime DB'den çek
                 const userSnapshot = await usersRef.child(currentUserId).once('value');
                 currentUser = userSnapshot.val();
 
                 if (currentUser && currentUser.username) {
-                    // UI'ı göster
+                    // Veri tamam, sohbeti başlat
                     authModal.style.display = 'none'; 
                     appContainer.style.display = 'flex'; 
                     
@@ -720,11 +888,15 @@
                         switchChannel(activeChannelId); 
                     }
                     
-                    // Giriş yapınca PeerJS'i başlat
+                    // PeerJS'i başlat
                     initializePeer(currentUserId);
                     
                 } else {
-                    auth.signOut(); 
+                    // Anonim giriş yapıldı ama kullanıcı adını kaydetmedi (ilk kez giriş yapıyor)
+                    // Modal'da beklet.
+                    console.log("Anonim oturum açık, kullanıcı verisi bekleniyor...");
+                    authModal.style.display = 'flex';
+                    appContainer.style.display = 'none';
                 }
 
             } else {
@@ -734,50 +906,21 @@
                     activeMessagesRef.off('child_added');
                 }
                 
-                // PeerJS temizliğini yap
-                if (peer) {
-                    peer.destroy();
-                    peer = null;
-                }
-                endCall(); 
-                
                 currentUser = null;
                 currentUserId = null;
                 activeMessagesRef = null; 
                 
+                // UI'ı gizle ve Modal'ı göster
                 appContainer.style.display = 'none'; 
                 authModal.style.display = 'flex'; 
                 
+                // Arayüzü temizle
                 messagesContainer.innerHTML = ''; 
                 channelsList.innerHTML = '';
-                usernameInput.value = ''; 
             }
         });
         
-        // (Buraya önceki yanıttaki loadChannels, switchChannel, loadMessages vb. fonksiyonları yapıştırmanız gerekmektedir)
-        // Eğer önceki yanıkları kaybetmediyseniz, kodun geri kalanı aynı kalmalıdır.
-
-        
-        // **ÖNEMLİ:** Buraya önceki yanıttaki tüm diğer JavaScript fonksiyonlarını yapıştırmayı unutmayın.
-        // Fonksiyonlar: loadChannels, switchChannel, loadMessages, displayMessage, messageForm.addEventListener, signupButton.addEventListener
-        // Bu yanıt sadece sesli sohbet kısmını eklediği için, diğer işlevler önceki kodda kalmıştır.
-
     </script>
-    <script>
-        // *** DİKKAT: BURAYA ÖNCEKİ KODUNUZDAKİ TÜM KAYIP FONKSİYONLARI YAPIŞTIRIN ***
-        
-        // Eğer önceki kısımları kaybetmediyseniz, aşağıdaki kod parçacıklarını 
-        // yukarıdaki alanda ilgili yerlere yerleştirin:
-        
-        // --- Eski Koddan Örnekler (Fonksiyonlarınızı buraya yapıştırın) ---
-        
-        // loadChannels() 
-        // switchChannel()
-        // loadMessages()
-        // displayMessage()
-        // messageForm.addEventListener()
-        // signupButton.addEventListener()
-        
-    </script>
+
 </body>
 </html>
