@@ -7,11 +7,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <style>
         /* Discord Benzeri Stil */
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #36393f; /* Discord Arka Planı */
+            background-color: #36393f;
             color: #dcddde;
             display: flex;
             justify-content: center;
@@ -26,7 +27,7 @@
             max-width: 1200px;
             height: 90vh;
             display: flex;
-            background-color: #2f3136; 
+            background-color: #2f3136;
             border-radius: 8px;
             box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
             overflow: hidden;
@@ -37,18 +38,17 @@
             color: #fff;
             font-size: 24px;
             font-weight: 700;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             padding: 10px 0;
             border-bottom: 1px solid #2f3136;
             width: 100%;
             text-align: center;
         }
 
-
         /* Sol Panel (Kanal Listesi/Site Logosu) */
         #left-panel {
             width: 240px;
-            background-color: #202225; 
+            background-color: #202225;
             padding: 10px;
             border-right: 1px solid #2f3136;
             display: flex;
@@ -62,23 +62,25 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background-image: url('pp.png'); 
+            background-image: url('pp.png');
             background-size: cover;
             background-position: center;
-            border: 3px solid #7289da; 
+            border: 3px solid #7289da;
             margin-bottom: 20px;
         }
         
-        #channels {
+        #channels-container {
             width: 100%;
             padding: 0 10px;
+            flex-grow: 1; 
+            overflow-y: auto;
         }
         
-        #channels h3 {
+        #channels h3, #voice-channels h3 {
             color: #99aab5;
             text-transform: uppercase;
             font-size: 12px;
-            margin-top: 0;
+            margin-top: 20px;
             margin-bottom: 5px;
         }
 
@@ -88,9 +90,34 @@
             cursor: pointer;
             transition: background-color 0.2s;
             font-weight: 500;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
         }
         .channel-item:hover {
             background-color: #36393f;
+        }
+        .channel-item.active {
+            background-color: #3f4247;
+            color: white;
+        }
+        
+        /* Yeni Kanal Butonu Stili */
+        #create-channel-button {
+            background-color: #5865f2;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transition: background-color 0.2s;
+            width: 100%;
+            font-size: 14px;
+        }
+        #create-channel-button:hover {
+            background-color: #4752c4;
         }
         
         /* Sohbet Alanı */
@@ -100,11 +127,20 @@
             flex-direction: column;
             padding: 10px;
         }
+        
+        /* Aktif Kanal Başlığı */
+        #channel-header {
+            font-size: 20px;
+            font-weight: bold;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #36393f;
+        }
 
         #messages {
             flex-grow: 1;
             overflow-y: auto;
-            padding-right: 15px; 
+            padding-right: 15px;
             margin-bottom: 10px;
         }
 
@@ -115,12 +151,11 @@
             align-items: flex-start;
         }
 
-        /* Varsayılan Avatar Stili (Storage'sız) */
+        /* Avatar Stili (Renk ve Baş Harf) */
         .msg-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: #7289da; /* Sabit bir renk */
             margin-right: 10px;
             flex-shrink: 0;
             display: flex;
@@ -130,6 +165,7 @@
             color: #fff;
             font-size: 18px;
             text-transform: uppercase;
+            border: 2px solid #2f3136;
         }
         
         .msg-content {
@@ -159,7 +195,7 @@
         #message-form {
             display: flex;
             padding: 10px;
-            background-color: #40444b; 
+            background-color: #40444b;
             border-radius: 8px;
         }
 
@@ -190,10 +226,12 @@
         }
 
         /* Scrollbar Stili */
+        #channels-container::-webkit-scrollbar,
         #messages::-webkit-scrollbar {
             width: 8px;
         }
 
+        #channels-container::-webkit-scrollbar-thumb,
         #messages::-webkit-scrollbar-thumb {
             background-color: #202225;
             border-radius: 4px;
@@ -227,7 +265,8 @@
             margin-bottom: 20px;
         }
 
-        .auth-box input[type="text"] {
+        .auth-box input[type="text"],
+        .auth-box input[type="color"] {
             width: calc(100% - 22px);
             padding: 10px;
             margin-bottom: 15px;
@@ -236,6 +275,26 @@
             color: #dcddde;
             border-radius: 3px;
             outline: none;
+        }
+        
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .color-picker-container label {
+            margin-right: 10px;
+            white-space: nowrap;
+            color: #99aab5;
+        }
+        .color-picker-container input[type="color"] {
+            width: 50px;
+            height: 30px;
+            padding: 0;
+            margin: 0;
+            border: none;
+            cursor: pointer;
         }
 
         .auth-box button {
@@ -270,6 +329,31 @@
             background-color: #c93b3b;
         }
         
+        .voice-channel-item {
+            color: #43b581; /* Discord yeşili */
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 2px;
+        }
+        .voice-channel-item:hover {
+            background-color: #36393f;
+        }
+        .voice-channel-item::before {
+            content: '🔊'; /* Hoparlör ikonu */
+            margin-right: 5px;
+        }
+        #join-voice-button {
+            background-color: #43b581;
+            margin-top: 10px;
+        }
+        #join-voice-button:hover {
+            background-color: #38976f;
+        }
+        
     </style>
 </head>
 <body>
@@ -277,7 +361,14 @@
     <div id="auth-modal" style="display: flex;">
         <div class="auth-box">
             <h2>Jaika'ya Hoş Geldiniz!</h2>
+            
             <input type="text" id="username-input" placeholder="Kullanıcı Adı" maxlength="16">
+            
+            <div class="color-picker-container">
+                <label for="avatar-color-input">Avatar Rengi:</label>
+                <input type="color" id="avatar-color-input" value="#5865f2">
+            </div>
+
             <button id="signup-button">Kaydol ve Başla</button>
         </div>
     </div>
@@ -287,19 +378,36 @@
         <div id="left-panel">
              <div id="site-name">Jaika</div>
             <div id="site-logo"></div>
-            <div id="channels">
-                <h3>Genel Kanallar</h3>
-                <div class="channel-item">#genel-sohbet</div>
+            
+            <button id="create-channel-button">+ Yeni Sohbet Oluştur</button>
+
+            <div id="channels-container">
+                
+                <div id="text-channels">
+                    <h3>Metin Kanalları</h3>
+                    <div id="channels">
+                        </div>
+                </div>
+
+                <div id="voice-channels">
+                    <h3>Ses Kanalları</h3>
+                    <div class="voice-channel-item" data-id="ses-sohbet">#ses-sohbet</div>
+                </div>
+
             </div>
+            
+            <button id="join-voice-button">Sesli Kanala Bağlan</button>
+
             <button id="logout-button">Çıkış Yap</button>
         </div>
 
         <div id="chat-area">
+             <div id="channel-header">#genel-sohbet</div>
             <div id="messages">
                 </div>
             
             <form id="message-form">
-                <input type="text" id="message-input" placeholder="#genel-sohbet kanalına mesaj gönderin" autocomplete="off">
+                <input type="text" id="message-input" placeholder="Mesaj Gönderin" autocomplete="off">
                 <button type="submit">Gönder</button>
             </form>
         </div>
@@ -307,33 +415,12 @@
     </div>
 
     <script>
-        // Rastgele avatar rengi üretme fonksiyonu (sadece kullanıcı adının ilk harfini göstereceğiz)
-        function getAvatarStyle(username) {
-            // Basit bir hash fonksiyonu ile kullanıcı adına göre renk üret
-            let hash = 0;
-            for (let i = 0; i < username.length; i++) {
-                hash = username.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const color = '#' + (
-                (hash >> 24) & 0xFF
-            ).toString(16).slice(-2) + (
-                (hash >> 16) & 0xFF
-            ).toString(16).slice(-2) + (
-                (hash >> 8) & 0xFF
-            ).toString(16).slice(-2);
-            
-            const firstLetter = username.charAt(0).toUpperCase();
-
-            return { color, firstLetter };
-        }
-
         // Firebase Yapılandırması
         const firebaseConfig = {
             apiKey: "AIzaSyA49KR-d9hN6QXXcvZ68CfYLpMulad8p50",
             authDomain: "multiplayer-chat-552f7.firebaseapp.com",
             databaseURL: "https://multiplayer-chat-552f7-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "multiplayer-chat-552f7",
-            // storageBucket kaldırıldı
             messagingSenderId: "658594907764",
             appId: "1:658594907764:web:18ca661bd9dd9f504df321",
             measurementId: "G-9JMN9DMG82"
@@ -345,111 +432,178 @@
         // Firebase Referansları
         const auth = firebase.auth();
         const database = firebase.database();
-        const messagesRef = database.ref('messages/genel-sohbet'); 
+        const channelsRef = database.ref('channels'); 
         const usersRef = database.ref('users'); 
 
         // DOM Elementleri
         const authModal = document.getElementById('auth-modal');
         const appContainer = document.getElementById('app-container');
         const usernameInput = document.getElementById('username-input');
+        const avatarColorInput = document.getElementById('avatar-color-input');
         const signupButton = document.getElementById('signup-button');
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
         const messagesContainer = document.getElementById('messages');
         const logoutButton = document.getElementById('logout-button');
+        const channelsList = document.getElementById('channels');
+        const createChannelButton = document.getElementById('create-channel-button');
+        const channelHeader = document.getElementById('channel-header');
+        const joinVoiceButton = document.getElementById('join-voice-button');
 
-        // Mevcut Kullanıcı Bilgisi
+        // Mevcut Durum
         let currentUser = null;
         let currentUserId = null;
+        let activeChannelId = 'genel-sohbet'; 
+        let activeMessagesRef = null;
+
+        // --- Yardımcı Fonksiyonlar ---
         
-        // Sohbet Ekranına Kaydırma
         function scrollToBottom() {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
+        
+        function updateMessagePlaceholder() {
+            const channelName = document.querySelector(`.channel-item.active`)?.textContent || `#${activeChannelId}`;
+            messageInput.placeholder = `${channelName} kanalına mesaj gönderin`;
+            channelHeader.textContent = channelName;
+        }
+        
+        // --- Kanal Yönetimi ---
 
-        // --- Firebase Auth ve Database Fonksiyonları (Storage'sız) ---
+        createChannelButton.addEventListener('click', () => {
+            const channelName = prompt("Oluşturmak istediğiniz sohbet kanalının adını girin (Örn: oyun, film):");
+            if (channelName) {
+                const safeName = channelName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                if (safeName) {
+                     channelsRef.child(safeName).set({
+                        name: safeName,
+                        title: channelName,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    }).catch(error => {
+                        alert("Kanal oluşturulamadı: " + error.message);
+                    });
+                }
+            }
+        });
 
-        // Giriş/Kayıt İşlemi
-        signupButton.addEventListener('click', async () => {
-            const username = usernameInput.value.trim();
+        // Sesli Sohbet Placeholder
+        joinVoiceButton.addEventListener('click', () => {
+            alert("Sesli sohbet şu anda sadece yer tutucu olarak çalışmaktadır. Gerçek zamanlı ses/video için WebRTC teknolojisi ve ek sunucu kurulumu gereklidir.");
+        });
 
-            if (!username) {
-                alert("Lütfen bir kullanıcı adı girin.");
-                return;
+        // Kanalları Listeleme
+        function loadChannels() {
+            // İlk yüklemede varsayılan kanalı ekle (Veritabanında yoksa)
+            channelsRef.child('genel-sohbet').once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    channelsRef.child('genel-sohbet').set({
+                        name: 'genel-sohbet',
+                        title: '#genel-sohbet',
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            });
+            
+            channelsRef.on('value', (snapshot) => {
+                channelsList.innerHTML = ''; 
+                
+                snapshot.forEach((childSnapshot) => {
+                    const channelId = childSnapshot.key;
+                    
+                    const channelDiv = document.createElement('div');
+                    channelDiv.className = 'channel-item';
+                    channelDiv.textContent = `#${channelId}`;
+                    channelDiv.dataset.id = channelId;
+
+                    if (channelId === activeChannelId) {
+                        channelDiv.classList.add('active');
+                    }
+
+                    channelDiv.addEventListener('click', () => {
+                        switchChannel(channelId);
+                    });
+                    
+                    channelsList.appendChild(channelDiv);
+                });
+                
+                // İlk kanal yoksa (bu durumda olmamalı ama yine de kontrol)
+                if (!activeChannelId || !document.querySelector(`[data-id="${activeChannelId}"]`)) {
+                    const firstChannel = snapshot.val() ? Object.keys(snapshot.val())[0] : 'genel-sohbet';
+                    if (firstChannel) {
+                         switchChannel(firstChannel);
+                    }
+                }
+            });
+        }
+        
+        // Kanal Değiştirme
+        function switchChannel(newChannelId) {
+            if (newChannelId === activeChannelId) return;
+
+            // Önceki kanaldaki tüm 'child_added' dinleyicilerini kaldır (ÇİFT MESAJ GİTMESİNE ENGEL OLUR)
+            if (activeMessagesRef) {
+                activeMessagesRef.off('child_added');
             }
             
-            signupButton.disabled = true;
+            // Kanal listesindeki aktifliği güncelle
+            document.querySelectorAll('.channel-item').forEach(item => item.classList.remove('active'));
+            document.querySelector(`[data-id="${newChannelId}"]`)?.classList.add('active');
 
-            try {
-                // 1. Anonim Kimlik Doğrulama
-                const userCredential = await auth.signInAnonymously();
-                const userId = userCredential.user.uid;
-                
-                // 2. Kullanıcı Bilgilerini Database'e Kaydet (Avatar URL olmadan)
-                const avatarData = getAvatarStyle(username);
+            activeChannelId = newChannelId;
+            messagesContainer.innerHTML = ''; // Mesajları temizle
+            
+            // Yeni kanala geç
+            activeMessagesRef = database.ref(`messages/${activeChannelId}`);
+            loadMessages();
+            updateMessagePlaceholder();
+        }
 
-                await usersRef.child(userId).set({
-                    username: username,
-                    avatarColor: avatarData.color, // Renk kaydedildi
-                    avatarInitial: avatarData.firstLetter // Baş harf kaydedildi
-                });
-
-                // onAuthStateChanged tetiklenecek
-                
-            } catch (error) {
-                console.error("Kayıt/Giriş Hatası:", error);
-                alert("Kayıt/Giriş sırasında bir hata oluştu: " + error.message);
-            } finally {
-                signupButton.disabled = false;
-            }
-        });
+        // --- Mesaj Yönetimi ---
         
-        // Çıkış Yapma
-        logoutButton.addEventListener('click', async () => {
-            try {
-                await auth.signOut();
-            } catch (error) {
-                console.error("Çıkış Hatası:", error);
-            }
-        });
-
-        // Firebase Auth Durumu Değiştiğinde
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUserId = user.uid;
+        function loadMessages() {
+            // activeMessagesRef zaten switchChannel'da ayarlandı
+            
+            // Yeni bir mesaj eklendiğinde
+            activeMessagesRef.on('child_added', (snapshot) => {
+                const message = snapshot.val();
                 
-                // Kullanıcı bilgilerini Database'den çek
-                const userSnapshot = await usersRef.child(currentUserId).once('value');
-                currentUser = userSnapshot.val();
-
-                if (currentUser && currentUser.username) {
-                    // Giriş başarılı, sohbet ekranını göster
-                    authModal.style.display = 'none'; 
-                    appContainer.style.display = 'flex'; 
-                    
-                    messagesContainer.innerHTML = ''; 
-                    loadMessages(); 
-                } else {
-                    // Kullanıcı bilgisi eksik (Kurallar hala kapalı olabilir!)
-                    console.warn("Kullanıcı bilgisi veritabanında bulunamadı. Lütfen Realtime Database kurallarını kontrol edin.");
-                    auth.signOut(); 
+                // Mesajda avatar bilgisi varsa direkt kullan (Yeni mesajlar)
+                if (message.avatarColor) {
+                    displayMessage(
+                        snapshot.key,
+                        message.username,
+                        message.text,
+                        message.avatarColor,
+                        message.avatarInitial,
+                        message.timestamp
+                    );
+                    scrollToBottom();
+                    return;
                 }
+                
+                // Mesajda avatar bilgisi yoksa (Eski mesajlar), user tablosundan çek
+                usersRef.child(message.userId).once('value').then(userSnap => {
+                    const userData = userSnap.val();
+                    if (userData) {
+                        displayMessage(
+                            snapshot.key, 
+                            userData.username, 
+                            message.text, 
+                            userData.avatarColor, 
+                            userData.avatarInitial, 
+                            message.timestamp
+                        );
+                    }
+                    scrollToBottom();
+                });
+            });
+        }
 
-            } else {
-                // Çıkış yapıldı veya henüz giriş yapılmadı
-                currentUser = null;
-                currentUserId = null;
-                appContainer.style.display = 'none'; 
-                authModal.style.display = 'flex'; 
-                messagesContainer.innerHTML = ''; 
-                usernameInput.value = ''; 
-            }
-        });
-        
-        // --- Mesaj Gönderme ve Alma Fonksiyonları ---
-
-        // Mesajı Ekrana Ekleme (Yeni Avatar Stili ile)
+        // Mesajı Ekrana Ekleme (Tekrarları Engeller)
         function displayMessage(key, username, text, avatarColor, avatarInitial, timestamp) {
+            // Ana FIX: Aynı key'e sahip mesaj zaten ekranda varsa tekrar eklemeyi engelle
+            if (document.querySelector(`.message[data-key="${key}"]`)) return;
+            
             const date = new Date(timestamp);
             const timeString = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
@@ -459,8 +613,8 @@
 
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'msg-avatar';
-            avatarDiv.style.backgroundColor = avatarColor || '#7289da'; // Renk kullan
-            avatarDiv.textContent = avatarInitial || username.charAt(0).toUpperCase(); // Baş harf kullan
+            avatarDiv.style.backgroundColor = avatarColor || '#7289da'; 
+            avatarDiv.textContent = avatarInitial || username.charAt(0).toUpperCase();
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'msg-content';
@@ -485,11 +639,10 @@
             e.preventDefault();
             const text = messageInput.value.trim();
 
-            if (text && currentUser) {
-                messagesRef.push({
+            if (text && currentUser && activeChannelId) {
+                activeMessagesRef.push({
                     userId: currentUserId,
                     username: currentUser.username,
-                    // Avatar bilgileri artık renk ve baş harf
                     avatarColor: currentUser.avatarColor,
                     avatarInitial: currentUser.avatarInitial,
                     text: text,
@@ -504,23 +657,82 @@
             }
         });
 
-        // Mesajları Yükleme ve Dinleme
-        function loadMessages() {
-            // Yeni bir mesaj eklendiğinde
-            messagesRef.on('child_added', (snapshot) => {
-                const message = snapshot.val();
-                displayMessage(
-                    snapshot.key,
-                    message.username,
-                    message.text,
-                    // Yeni veritabanı alanlarını kullan
-                    message.avatarColor,
-                    message.avatarInitial,
-                    message.timestamp
-                );
-                scrollToBottom();
-            });
-        }
+        // --- Kimlik Doğrulama ---
+
+        // Giriş/Kayıt İşlemi
+        signupButton.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const avatarColor = avatarColorInput.value;
+
+            if (!username) {
+                alert("Lütfen bir kullanıcı adı girin.");
+                return;
+            }
+            
+            signupButton.disabled = true;
+
+            try {
+                let userCredential;
+                if (auth.currentUser) {
+                    userCredential = { user: auth.currentUser };
+                } else {
+                    userCredential = await auth.signInAnonymously();
+                }
+                const userId = userCredential.user.uid;
+                
+                const avatarInitial = username.charAt(0).toUpperCase();
+
+                // Kullanıcı Bilgilerini Database'e Kaydet
+                await usersRef.child(userId).set({
+                    username: username,
+                    avatarColor: avatarColor,
+                    avatarInitial: avatarInitial
+                });
+
+            } catch (error) {
+                console.error("Kayıt/Giriş Hatası:", error);
+                alert("Kayıt/Giriş sırasında bir hata oluştu: " + error.message);
+            } finally {
+                signupButton.disabled = false;
+            }
+        });
+
+        // Firebase Auth Durumu Değiştiğinde
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                
+                const userSnapshot = await usersRef.child(currentUserId).once('value');
+                currentUser = userSnapshot.val();
+
+                if (currentUser && currentUser.username) {
+                    // UI'ı göster
+                    authModal.style.display = 'none'; 
+                    appContainer.style.display = 'flex'; 
+                    
+                    // Kanalları ve mesajları yükle
+                    loadChannels();
+                    
+                    if (activeChannelId) {
+                        // İlk yüklemede kanalı değiştirerek dinleyiciyi ayarla
+                        switchChannel(activeChannelId); 
+                    }
+                    
+                } else {
+                    auth.signOut(); 
+                }
+
+            } else {
+                currentUser = null;
+                currentUserId = null;
+                appContainer.style.display = 'none'; 
+                authModal.style.display = 'flex'; 
+                messagesContainer.innerHTML = ''; 
+                channelsList.innerHTML = '';
+                usernameInput.value = ''; 
+            }
+        });
+        
     </script>
 
 </body>
