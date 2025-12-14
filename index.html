@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Online Chat</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background: #f0f0f0; }
+  #chat { max-width: 500px; margin: 50px auto; padding: 10px; background: white; border-radius: 5px; }
+  #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; margin-bottom: 10px; }
+  .message { padding: 5px; border-bottom: 1px solid #eee; }
+</style>
+</head>
+<body>
+<div id="chat">
+  <h3>Online Chat</h3>
+  <div id="messages"></div>
+  <input type="text" id="username" placeholder="Kullanıcı Adı" style="width:100%; margin-bottom:5px;">
+  <input type="text" id="message" placeholder="Mesajınız" style="width:100%; margin-bottom:5px;">
+  <button onclick="sendMessage()">Gönder</button>
+</div>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyA49KR-d9hN6QXXcvZ68CfYLpMulad8p50",
+    authDomain: "multiplayer-chat-552f7.firebaseapp.com",
+    databaseURL: "https://multiplayer-chat-552f7-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "multiplayer-chat-552f7",
+    storageBucket: "multiplayer-chat-552f7.firebasestorage.app",
+    messagingSenderId: "658594907764",
+    appId: "1:658594907764:web:18ca661bd9dd9f504df321",
+    measurementId: "G-9JMN9DMG82"
+  };
+
+  // Firebase başlat
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Mesaj gönder
+  function sendMessage() {
+    const username = document.getElementById('username').value || "Anonim";
+    const message = document.getElementById('message').value;
+    if (message.trim() === "") return;
+
+    db.ref('messages').push({
+      username: username,
+      message: message,
+      timestamp: Date.now()
+    });
+
+    document.getElementById('message').value = "";
+  }
+
+  // Mesajları dinle ve ekrana yaz
+  db.ref('messages').on('child_added', function(snapshot) {
+    const msg = snapshot.val();
+    const messagesDiv = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.classList.add('message');
+    div.textContent = msg.username + ": " + msg.message;
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // en son mesaja kaydır
+  });
+</script>
+</body>
+</html>
