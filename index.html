@@ -1,121 +1,527 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>Online Chat</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-  #chat { width:400px; background:white; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; }
-  #messages { flex:1; overflow-y:auto; padding:10px; border-bottom:1px solid #ddd; }
-  .message { margin-bottom:10px; display:flex; align-items:flex-start; }
-  .message img { width:30px; height:30px; border-radius:50%; margin-right:10px; }
-  #inputArea { display:flex; flex-direction:column; padding:10px; gap:5px; }
-  #inputArea input[type=text], #inputArea input[type=file] { width:100%; }
-  #inputArea button { padding:8px; cursor:pointer; border:none; background:#007bff; color:white; border-radius:5px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡️ Jaika Sohbet</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        /* Discord Benzeri Stil */
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #36393f; /* Discord Arka Planı */
+            color: #dcddde;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Ana Konteyner */
+        #app-container {
+            width: 90%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            background-color: #2f3136; 
+            border-radius: 8px;
+            box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        /* Başlık stili */
+        #site-name {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding: 10px 0;
+            border-bottom: 1px solid #2f3136;
+            width: 100%;
+            text-align: center;
+        }
+
+
+        /* Sol Panel (Kanal Listesi/Site Logosu) */
+        #left-panel {
+            width: 240px;
+            background-color: #202225; 
+            padding: 10px;
+            border-right: 1px solid #2f3136;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* Site Logosu/Fotoğrafı (pp.png) */
+        #site-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-image: url('pp.png'); 
+            background-size: cover;
+            background-position: center;
+            border: 3px solid #7289da; 
+            margin-bottom: 20px;
+        }
+        
+        #channels {
+            width: 100%;
+            padding: 0 10px;
+        }
+        
+        #channels h3 {
+            color: #99aab5;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .channel-item {
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 500;
+        }
+        .channel-item:hover {
+            background-color: #36393f;
+        }
+        
+        /* Sohbet Alanı */
+        #chat-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 15px; 
+            margin-bottom: 10px;
+        }
+
+        /* Mesaj Stili */
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: flex-start;
+        }
+
+        /* Varsayılan Avatar Stili (Storage'sız) */
+        .msg-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #7289da; /* Sabit bir renk */
+            margin-right: 10px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #fff;
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+        
+        .msg-content {
+            padding: 5px 0;
+        }
+
+        .msg-username {
+            font-weight: bold;
+            color: #ffffff;
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .msg-timestamp {
+            color: #72767d;
+            font-size: 12px;
+        }
+
+        .msg-text {
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+
+        /* Giriş Formu */
+        #message-form {
+            display: flex;
+            padding: 10px;
+            background-color: #40444b; 
+            border-radius: 8px;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #dcddde;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #message-form button {
+            background-color: #7289da;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+            transition: background-color 0.2s;
+        }
+
+        #message-form button:hover {
+            background-color: #677bc4;
+        }
+
+        /* Scrollbar Stili */
+        #messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #messages::-webkit-scrollbar-thumb {
+            background-color: #202225;
+            border-radius: 4px;
+        }
+
+        /* Giriş/Kayıt Modalı */
+        #auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .auth-box {
+            background-color: #36393f;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            width: 350px;
+            text-align: center;
+        }
+
+        .auth-box h2 {
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .auth-box input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #2f3136;
+            background-color: #40444b;
+            color: #dcddde;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .auth-box button {
+            width: 100%;
+            padding: 10px;
+            background-color: #7289da;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        .auth-box button:hover {
+            background-color: #677bc4;
+        }
+        
+        #logout-button {
+            background-color: #f04747;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: auto; 
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+            width: 80%; 
+        }
+        #logout-button:hover {
+            background-color: #c93b3b;
+        }
+        
+    </style>
 </head>
 <body>
 
-<div id="chat">
-  <div id="messages"></div>
+    <div id="auth-modal" style="display: flex;">
+        <div class="auth-box">
+            <h2>Jaika'ya Hoş Geldiniz!</h2>
+            <input type="text" id="username-input" placeholder="Kullanıcı Adı" maxlength="16">
+            <button id="signup-button">Kaydol ve Başla</button>
+        </div>
+    </div>
+    
+    <div id="app-container" style="display: none;">
+        
+        <div id="left-panel">
+             <div id="site-name">Jaika</div>
+            <div id="site-logo"></div>
+            <div id="channels">
+                <h3>Genel Kanallar</h3>
+                <div class="channel-item">#genel-sohbet</div>
+            </div>
+            <button id="logout-button">Çıkış Yap</button>
+        </div>
 
-  <div id="inputArea">
-    <input type="text" id="username" placeholder="Adınızı girin">
-    <input type="file" id="profilePic" accept="image/*">
-    <input type="text" id="message" placeholder="Mesaj yazın">
-    <input type="file" id="photo" accept="image/*">
-    <input type="file" id="audio" accept="audio/*">
-    <button onclick="sendMessage()">Gönder</button>
-  </div>
-</div>
+        <div id="chat-area">
+            <div id="messages">
+                </div>
+            
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="#genel-sohbet kanalına mesaj gönderin" autocomplete="off">
+                <button type="submit">Gönder</button>
+            </form>
+        </div>
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyA49KR-d9hN6QXXcvZ68CfYLpMulad8p50",
-  authDomain: "multiplayer-chat-552f7.firebaseapp.com",
-  databaseURL: "https://multiplayer-chat-552f7-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "multiplayer-chat-552f7",
-  storageBucket: "multiplayer-chat-552f7.firebasestorage.app",
-  messagingSenderId: "658594907764",
-  appId: "1:658594907764:web:18ca661bd9dd9f504df321",
-  measurementId: "G-9JMN9DMG82"
-};
+    </div>
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const storage = firebase.storage();
+    <script>
+        // Rastgele avatar rengi üretme fonksiyonu (sadece kullanıcı adının ilk harfini göstereceğiz)
+        function getAvatarStyle(username) {
+            // Basit bir hash fonksiyonu ile kullanıcı adına göre renk üret
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const color = '#' + (
+                (hash >> 24) & 0xFF
+            ).toString(16).slice(-2) + (
+                (hash >> 16) & 0xFF
+            ).toString(16).slice(-2) + (
+                (hash >> 8) & 0xFF
+            ).toString(16).slice(-2);
+            
+            const firstLetter = username.charAt(0).toUpperCase();
 
-// Mesaj gönder
-async function sendMessage() {
-  const username = document.getElementById('username').value || "Anonim";
-  const messageText = document.getElementById('message').value;
-  const profileFile = document.getElementById('profilePic').files[0];
-  const photoFile = document.getElementById('photo').files[0];
-  const audioFile = document.getElementById('audio').files[0];
+            return { color, firstLetter };
+        }
 
-  let profileUrl = "";
-  if(profileFile) {
-    profileUrl = await uploadFile(profileFile, 'profiles');
-  }
+        // Firebase Yapılandırması
+        const firebaseConfig = {
+            apiKey: "AIzaSyA49KR-d9hN6QXXcvZ68CfYLpMulad8p50",
+            authDomain: "multiplayer-chat-552f7.firebaseapp.com",
+            databaseURL: "https://multiplayer-chat-552f7-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "multiplayer-chat-552f7",
+            // storageBucket kaldırıldı
+            messagingSenderId: "658594907764",
+            appId: "1:658594907764:web:18ca661bd9dd9f504df321",
+            measurementId: "G-9JMN9DMG82"
+        };
 
-  let photoUrl = "";
-  if(photoFile) {
-    photoUrl = await uploadFile(photoFile, 'photos');
-  }
+        // Firebase'i Başlat
+        firebase.initializeApp(firebaseConfig);
 
-  let audioUrl = "";
-  if(audioFile) {
-    audioUrl = await uploadFile(audioFile, 'audios');
-  }
+        // Firebase Referansları
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const messagesRef = database.ref('messages/genel-sohbet'); 
+        const usersRef = database.ref('users'); 
 
-  db.ref('messages').push({
-    username: username,
-    profileUrl: profileUrl,
-    message: messageText,
-    photoUrl: photoUrl,
-    audioUrl: audioUrl,
-    timestamp: Date.now()
-  });
+        // DOM Elementleri
+        const authModal = document.getElementById('auth-modal');
+        const appContainer = document.getElementById('app-container');
+        const usernameInput = document.getElementById('username-input');
+        const signupButton = document.getElementById('signup-button');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const messagesContainer = document.getElementById('messages');
+        const logoutButton = document.getElementById('logout-button');
 
-  document.getElementById('message').value = "";
-  document.getElementById('photo').value = "";
-  document.getElementById('audio').value = "";
-}
+        // Mevcut Kullanıcı Bilgisi
+        let currentUser = null;
+        let currentUserId = null;
+        
+        // Sohbet Ekranına Kaydırma
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
 
-// Dosya yükleme
-function uploadFile(file, folder) {
-  return new Promise((resolve, reject) => {
-    const storageRef = storage.ref(`${folder}/${Date.now()}_${file.name}`);
-    storageRef.put(file).then(snapshot => {
-      snapshot.ref.getDownloadURL().then(url => resolve(url));
-    }).catch(reject);
-  });
-}
+        // --- Firebase Auth ve Database Fonksiyonları (Storage'sız) ---
 
-// Mesajları dinle
-db.ref('messages').on('child_added', function(snapshot) {
-  const msg = snapshot.val();
-  const div = document.createElement('div');
-  div.classList.add('message');
+        // Giriş/Kayıt İşlemi
+        signupButton.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
 
-  const img = document.createElement('img');
-  img.src = msg.profileUrl || 'https://via.placeholder.com/30';
-  div.appendChild(img);
+            if (!username) {
+                alert("Lütfen bir kullanıcı adı girin.");
+                return;
+            }
+            
+            signupButton.disabled = true;
 
-  const content = document.createElement('div');
+            try {
+                // 1. Anonim Kimlik Doğrulama
+                const userCredential = await auth.signInAnonymously();
+                const userId = userCredential.user.uid;
+                
+                // 2. Kullanıcı Bilgilerini Database'e Kaydet (Avatar URL olmadan)
+                const avatarData = getAvatarStyle(username);
 
-  if(msg.message) content.innerHTML += `<div>${msg.username}: ${msg.message}</div>`;
-  if(msg.photoUrl) content.innerHTML += `<div><img src="${msg.photoUrl}" style="max-width:200px;"></div>`;
-  if(msg.audioUrl) content.innerHTML += `<div><audio controls src="${msg.audioUrl}"></audio></div>`;
+                await usersRef.child(userId).set({
+                    username: username,
+                    avatarColor: avatarData.color, // Renk kaydedildi
+                    avatarInitial: avatarData.firstLetter // Baş harf kaydedildi
+                });
 
-  div.appendChild(content);
-  document.getElementById('messages').appendChild(div);
-  document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-});
-</script>
+                // onAuthStateChanged tetiklenecek
+                
+            } catch (error) {
+                console.error("Kayıt/Giriş Hatası:", error);
+                alert("Kayıt/Giriş sırasında bir hata oluştu: " + error.message);
+            } finally {
+                signupButton.disabled = false;
+            }
+        });
+        
+        // Çıkış Yapma
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                console.error("Çıkış Hatası:", error);
+            }
+        });
+
+        // Firebase Auth Durumu Değiştiğinde
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                
+                // Kullanıcı bilgilerini Database'den çek
+                const userSnapshot = await usersRef.child(currentUserId).once('value');
+                currentUser = userSnapshot.val();
+
+                if (currentUser && currentUser.username) {
+                    // Giriş başarılı, sohbet ekranını göster
+                    authModal.style.display = 'none'; 
+                    appContainer.style.display = 'flex'; 
+                    
+                    messagesContainer.innerHTML = ''; 
+                    loadMessages(); 
+                } else {
+                    // Kullanıcı bilgisi eksik (Kurallar hala kapalı olabilir!)
+                    console.warn("Kullanıcı bilgisi veritabanında bulunamadı. Lütfen Realtime Database kurallarını kontrol edin.");
+                    auth.signOut(); 
+                }
+
+            } else {
+                // Çıkış yapıldı veya henüz giriş yapılmadı
+                currentUser = null;
+                currentUserId = null;
+                appContainer.style.display = 'none'; 
+                authModal.style.display = 'flex'; 
+                messagesContainer.innerHTML = ''; 
+                usernameInput.value = ''; 
+            }
+        });
+        
+        // --- Mesaj Gönderme ve Alma Fonksiyonları ---
+
+        // Mesajı Ekrana Ekleme (Yeni Avatar Stili ile)
+        function displayMessage(key, username, text, avatarColor, avatarInitial, timestamp) {
+            const date = new Date(timestamp);
+            const timeString = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.dataset.key = key;
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'msg-avatar';
+            avatarDiv.style.backgroundColor = avatarColor || '#7289da'; // Renk kullan
+            avatarDiv.textContent = avatarInitial || username.charAt(0).toUpperCase(); // Baş harf kullan
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'msg-content';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.innerHTML = `<span class="msg-username">${username}</span> <span class="msg-timestamp">${timeString}</span>`;
+
+            const textP = document.createElement('p');
+            textP.className = 'msg-text';
+            textP.textContent = text;
+            
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(textP);
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        // Mesaj Gönderme İşlemi
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+
+            if (text && currentUser) {
+                messagesRef.push({
+                    userId: currentUserId,
+                    username: currentUser.username,
+                    // Avatar bilgileri artık renk ve baş harf
+                    avatarColor: currentUser.avatarColor,
+                    avatarInitial: currentUser.avatarInitial,
+                    text: text,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP 
+                })
+                .then(() => {
+                    messageInput.value = ''; 
+                })
+                .catch(error => {
+                    console.error("Mesaj gönderme hatası:", error);
+                });
+            }
+        });
+
+        // Mesajları Yükleme ve Dinleme
+        function loadMessages() {
+            // Yeni bir mesaj eklendiğinde
+            messagesRef.on('child_added', (snapshot) => {
+                const message = snapshot.val();
+                displayMessage(
+                    snapshot.key,
+                    message.username,
+                    message.text,
+                    // Yeni veritabanı alanlarını kullan
+                    message.avatarColor,
+                    message.avatarInitial,
+                    message.timestamp
+                );
+                scrollToBottom();
+            });
+        }
+    </script>
 
 </body>
 </html>
