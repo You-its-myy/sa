@@ -3,436 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡️ Jaika Sohbet (Medya ve Sesli Kullanıcı Listeli)</title>
+    <title>⚡️ Jaika Sohbet (Tam ve Çalışan Sürüm)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script> 
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <style>
-        /* Ana konteyner stilleri */
+        /* === GLOBAL STİLLER (ŞIK GUI) === */
+        :root {
+            --bg-dark: #1e1f22; /* Ana Arka Plan */
+            --bg-medium: #2b2d31; /* Orta Alan (Chat Alanı) */
+            --bg-light: #383a40; /* Giriş/Kart Arka Planı */
+            --text-primary: #f2f3f5; /* Birincil Metin Rengi */
+            --text-secondary: #b5bac1; /* İkincil Metin/Zaman */
+            --color-brand: #5865f2; /* Mavi Vurgu */
+            --color-success: #23a55a; /* Yeşil (Ses/Gönder) */
+            --color-danger: #f23f42; /* Kırmızı (Sil/Çıkış) */
+            --radius-default: 6px;
+        }
+
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #36393f;
-            color: #dcddde;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            transition: background-color 0.3s;
         }
 
         #app-container {
-            width: 90%;
-            max-width: 1200px;
-            height: 90vh;
+            width: 95%;
+            max-width: 1400px;
+            height: 95vh;
             display: flex;
-            background-color: #2f3136;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+            background-color: var(--bg-medium);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
         }
         
-        #site-name {
-            color: #fff;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            padding: 10px 0;
-            border-bottom: 1px solid #2f3136;
-            width: 100%;
-            text-align: center;
-        }
-
+        /* === SOL PANEL (KANALLAR) === */
         #left-panel {
-            width: 240px;
-            background-color: #202225;
-            padding: 10px;
-            border-right: 1px solid #2f3136;
+            width: 280px;
+            background-color: var(--bg-dark);
+            padding: 15px;
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
+            flex-shrink: 0;
+        }
+        
+        #site-name {
+            color: var(--text-primary);
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--bg-medium);
+            width: 100%;
+            text-align: center;
         }
 
         #site-logo {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            background-image: url('pp.png');
             background-size: cover;
             background-position: center;
-            border: 3px solid #7289da;
+            border: 4px solid var(--color-brand);
             margin-bottom: 20px;
         }
-        
+
         #channels-container {
             width: 100%;
-            padding: 0 10px;
+            padding: 0;
             flex-grow: 1; 
             overflow-y: auto;
         }
         
         #channels h3, #voice-channels h3 {
-            color: #99aab5;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 700;
             margin-top: 20px;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            padding-left: 5px;
         }
 
-        .channel-item {
-            padding: 5px 10px;
-            border-radius: 3px;
+        .channel-item, .voice-channel-item {
+            padding: 8px 10px;
+            border-radius: var(--radius-default);
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.15s, color 0.15s;
             font-weight: 500;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
         }
-        .channel-item:hover {
-            background-color: #36393f;
+        .channel-item:hover, .voice-channel-item:hover {
+            background-color: var(--bg-light);
         }
         .channel-item.active {
-            background-color: #3f4247;
+            background-color: var(--color-brand);
             color: white;
         }
+        .channel-item::before {
+             content: '#';
+             color: var(--text-secondary);
+             font-size: 18px;
+             margin-right: 5px;
+             font-weight: 600;
+        }
+        .channel-item.active::before {
+             color: white;
+        }
         
-        #create-channel-button {
-            background-color: #5865f2;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-bottom: 15px;
-            transition: background-color 0.2s;
-            width: 100%;
+        /* Sesli Kanallar */
+        .voice-channel-item {
+            color: var(--color-success); 
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .voice-channel-item::before {
+            content: '🔊'; 
+            margin-right: 5px;
+            font-size: 16px;
+            color: var(--color-success);
+            padding-right: 0;
+        }
+        .voice-user {
+            color: var(--text-primary);
             font-size: 14px;
+            margin-bottom: 2px;
+            padding-left: 0;
         }
-        #create-channel-button:hover {
-            background-color: #4752c4;
+        .voice-user::before {
+            content: '•'; 
+            margin-right: 5px;
+            color: var(--color-success);
         }
         
+        /* Butonlar */
+        #create-channel-button, #join-voice-button, #end-call-button, #logout-button {
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--radius-default);
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+            font-size: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        #create-channel-button { background-color: var(--color-brand); color: white; }
+        #create-channel-button:hover { background-color: #4752c4; transform: translateY(-1px); }
+        #join-voice-button { background-color: var(--color-success); color: white; }
+        #join-voice-button:hover { background-color: #1e8749; transform: translateY(-1px); }
+        #end-call-button { background-color: var(--color-danger); color: white; }
+        #end-call-button:hover { background-color: #c43335; transform: translateY(-1px); }
+
+        #logout-button {
+            background-color: var(--bg-light);
+            color: var(--text-secondary);
+            margin-top: auto; 
+            margin-bottom: 10px;
+            box-shadow: none;
+            border: 1px solid var(--bg-medium);
+            width: calc(100% - 30px);
+        }
+        #logout-button:hover { background-color: #4b4d53; color: white; }
+        
+        #voice-status {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: var(--bg-light);
+            border-radius: var(--radius-default);
+            color: #ffc107; 
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        /* === SOHBET ALANI === */
         #chat-area {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            padding: 10px;
+            padding: 20px;
         }
         
         #channel-header {
-            font-size: 20px;
-            font-weight: bold;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #36393f;
+            font-size: 24px;
+            font-weight: 700;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--bg-light);
+            color: var(--text-primary);
         }
 
         #messages {
             flex-grow: 1;
             overflow-y: auto;
             padding-right: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .message {
             display: flex;
-            margin-bottom: 15px;
-            align-items: flex-start;
+            padding: 10px 0;
+            margin-bottom: 5px; 
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .message:hover {
+            background-color: rgba(0, 0, 0, 0.1);
         }
 
         .msg-avatar {
-            width: 40px;
-            height: 40px;
+            width: 45px; 
+            height: 45px;
             border-radius: 50%;
-            margin-right: 10px;
+            margin-right: 15px;
             flex-shrink: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             font-weight: bold;
             color: #fff;
-            font-size: 18px;
-            text-transform: uppercase;
-            border: 2px solid #2f3136;
+            font-size: 20px;
+            background-color: var(--color-brand); 
+            border: none;
+        }
+        .msg-avatar.has-photo {
+             background-size: cover !important;
+             background-position: center !important;
+             text-indent: -9999px;
         }
         
-        .msg-content {
-            padding: 5px 0;
-        }
+        .msg-content { padding: 0; flex-grow: 1; }
+        .msg-username { font-weight: bold; color: var(--text-primary); margin-right: 10px; font-size: 16px; }
+        .msg-timestamp { color: var(--text-secondary); font-size: 12px; }
+        .msg-text { word-wrap: break-word; font-size: 15px; line-height: 1.4; margin-top: 4px; }
+        .msg-media { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; }
+        .msg-image { max-height: 300px; object-fit: contain; }
+        .msg-audio { width: 100%; max-width: 300px; margin-top: 5px; }
 
-        .msg-username {
-            font-weight: bold;
-            color: #ffffff;
-            margin-right: 8px;
-            font-size: 16px;
-        }
-
-        .msg-timestamp {
-            color: #72767d;
-            font-size: 12px;
-        }
-
-        .msg-text {
-            word-wrap: break-word;
-            font-size: 15px;
-            line-height: 1.4;
-            margin-top: 2px;
-        }
-
+        /* === MESAJ GİRİŞ FORMU === */
         #message-form {
             display: flex;
             padding: 10px;
-            background-color: #40444b;
-            border-radius: 8px;
-        }
-
-        #media-buttons {
-            display: flex;
+            background-color: var(--bg-light);
+            border-radius: var(--radius-default);
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        #message-form #user-message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
             margin-right: 10px;
+            flex-shrink: 0;
         }
-
+        
+        #media-buttons { display: flex; align-items: center; margin-right: 10px; flex-shrink: 0; }
         #media-buttons button {
-            background: none;
-            border: none;
-            color: #7289da;
-            font-size: 20px;
-            margin: 0 5px;
-            cursor: pointer;
-            padding: 5px;
-            transition: color 0.2s;
+            background: none; border: none; color: var(--text-secondary); font-size: 24px; margin: 0 5px;
+            cursor: pointer; padding: 5px; transition: color 0.2s, transform 0.1s;
         }
-        #media-buttons button:hover {
-            color: #5865f2;
-        }
+        #media-buttons button:hover { color: var(--color-brand); transform: scale(1.1); }
         
         #message-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            color: #dcddde;
-            font-size: 16px;
-            outline: none;
+            flex-grow: 1; padding: 10px; border: none; background: transparent; color: var(--text-primary);
+            font-size: 16px; outline: none;
         }
+        #message-input::placeholder { color: var(--text-secondary); opacity: 0.6; }
 
         #message-form button[type="submit"] {
-            background-color: #7289da;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-left: 10px;
-            transition: background-color 0.2s;
+            background-color: var(--color-brand); color: white; border: none; padding: 8px 12px;
+            border-radius: var(--radius-default); cursor: pointer; font-weight: 600; margin-left: 10px;
+            transition: background-color 0.2s; flex-shrink: 0;
         }
+        #message-form button[type="submit"]:hover { background-color: #4752c4; }
+        .editing-message { background-color: #5865f233; border-radius: 4px; padding: 0 5px; }
+        #upload-status { color: var(--color-success); font-size: 14px; margin-left: 15px; margin-top: 5px; }
 
-        #message-form button[type="submit"]:hover {
-            background-color: #677bc4;
+        /* === MODAL VE AUTH STİLLERİ === */
+        #auth-modal { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.85); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
         }
-
-        #channels-container::-webkit-scrollbar,
-        #messages::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #channels-container::-webkit-scrollbar-thumb,
-        #messages::-webkit-scrollbar-thumb {
-            background-color: #202225;
-            border-radius: 4px;
-        }
-
-        #auth-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
         .auth-box {
-            background-color: #36393f;
-            padding: 30px;
-            border-radius: 5px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            width: 350px;
-            text-align: center;
+            background-color: var(--bg-medium); padding: 40px; border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6); width: 380px;
+        }
+        .auth-box h2 { color: var(--text-primary); margin-bottom: 30px; font-size: 28px; }
+        .auth-box input[type="text"], .auth-box input[type="color"] {
+            width: calc(100% - 22px); padding: 12px; margin-bottom: 20px; border: 1px solid var(--bg-light);
+            background-color: var(--bg-dark); color: var(--text-primary); border-radius: var(--radius-default);
+            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .auth-box input[type="text"]:focus { border-color: var(--color-brand); box-shadow: 0 0 0 1px var(--color-brand); }
+        .profile-photo-area { margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
+        #profile-photo-preview {
+            width: 90px; height: 90px; border-radius: 50%; background-color: var(--color-brand);
+            margin-bottom: 10px; cursor: pointer; border: 3px solid var(--color-brand); transition: border-color 0.2s;
+            display: flex; justify-content: center; align-items: center; font-size: 14px; color: white;
+            background-size: cover; background-position: center;
         }
 
-        .auth-box h2 {
-            color: #fff;
-            margin-bottom: 20px;
+        /* === SAĞ TIK MENÜSÜ === */
+        #context-menu {
+            background-color: var(--bg-light); border: none; border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6); padding: 5px 0; position: absolute; z-index: 2000; display: none;
         }
-
-        .auth-box input[type="text"],
-        .auth-box input[type="color"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #2f3136;
-            background-color: #40444b;
-            color: #dcddde;
-            border-radius: 3px;
-            outline: none;
-        }
+        #context-menu div { padding: 10px 20px; font-size: 15px; cursor: pointer; transition: background-color 0.1s; }
+        #context-menu div:hover { background-color: var(--bg-medium); }
+        #context-menu .action-delete { color: var(--color-danger); }
         
-        .color-picker-container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .color-picker-container label {
-            margin-right: 10px;
-            white-space: nowrap;
-            color: #99aab5;
-        }
-        .color-picker-container input[type="color"] {
-            width: 50px;
-            height: 30px;
-            padding: 0;
-            margin: 0;
-            border: none;
-            cursor: pointer;
-        }
-
-        .auth-box button {
-            width: 100%;
-            padding: 10px;
-            background-color: #7289da;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.2s;
-        }
-        .auth-box button:hover {
-            background-color: #677bc4;
-        }
-        
-        #logout-button {
-            background-color: #f04747;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: auto; 
-            margin-bottom: 10px;
-            transition: background-color 0.2s;
-            width: 80%; 
-        }
-        #logout-button:hover {
-            background-color: #c93b3b;
-        }
-        
-        .voice-channel-item {
-            color: #43b581; 
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-bottom: 2px;
-        }
-        .voice-channel-item:hover {
-            background-color: #36393f;
-        }
-        .voice-channel-item::before {
-            content: '🔊'; 
-            margin-right: 5px;
-        }
-        
-        #voice-status {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #40444b;
-            border-radius: 4px;
-            color: #ffc107;
-            text-align: center;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        #join-voice-button, #end-call-button {
-            background-color: #43b581;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: background-color 0.2s;
-            width: 80%;
-        }
-        #join-voice-button:hover {
-            background-color: #38976f;
-        }
-        #end-call-button {
-            background-color: #f04747; 
-            display: none; 
-        }
-        #end-call-button:hover {
-            background-color: #c93b3b;
-        }
-        
-        /* Medya İçeriği Stili */
-        .msg-media {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 5px;
-            display: block;
-        }
-        .msg-image {
-            max-height: 300px;
-            object-fit: contain;
-        }
-        
-        .msg-audio {
-            width: 100%;
-            max-width: 300px;
-            margin-top: 5px;
-        }
-
-        /* Yükleniyor Durumu */
-        #upload-status {
-            color: #43b581;
-            font-size: 14px;
-            margin-left: 10px;
-        }
-
-        /* Sesli Kullanıcı Listesi Stilleri (YENİ) */
-        #voice-user-list {
-            font-size: 13px;
-            list-style: none;
-            padding: 0;
-            margin: 5px 0 0 0;
-        }
-        .voice-user {
-            display: flex;
-            align-items: center;
-            margin-bottom: 3px;
-            color: #dcddde;
-        }
-        .voice-user::before {
-            content: '🔊';
-            margin-right: 5px;
-            color: #43b581;
-        }
-        
+        /* === SCROLLBAR === */
+        #channels-container::-webkit-scrollbar, #messages::-webkit-scrollbar { width: 8px; background-color: transparent; }
+        #channels-container::-webkit-scrollbar-thumb, #messages::-webkit-scrollbar-thumb { background-color: var(--bg-light); border-radius: 4px; }
+        #channels-container::-webkit-scrollbar-thumb:hover, #messages::-webkit-scrollbar-thumb:hover { background-color: #4b4d53; }
     </style>
 </head>
 <body>
@@ -441,10 +344,15 @@
         <div class="auth-box">
             <h2>Jaika'ya Hoş Geldiniz!</h2>
             
+            <div class="profile-photo-area">
+                <div id="profile-photo-preview">PP Seç</div>
+                <input type="file" id="profile-photo-input" style="display: none;" accept="image/*">
+            </div>
+
             <input type="text" id="username-input" placeholder="Kullanıcı Adı" maxlength="16">
             
             <div class="color-picker-container">
-                <label for="avatar-color-input">Avatar Rengi:</label>
+                <label for="avatar-color-input">Yedek Renk:</label>
                 <input type="color" id="avatar-color-input" value="#5865f2">
             </div>
 
@@ -452,6 +360,12 @@
         </div>
     </div>
     
+    <div id="context-menu">
+        <div id="context-copy">Kopyala</div>
+        <div id="context-edit">Mesajı Düzenle</div>
+        <div id="context-delete" class="action-delete">Sil</div>
+    </div>
+
     <div id="app-container" style="display: none;">
         
         <div id="left-panel">
@@ -471,9 +385,9 @@
                 <div id="voice-channels">
                     <h3>Ses Kanalları</h3>
                     <div class="voice-channel-item" data-id="ses-sohbet">
-                        #ses-sohbet
+                        <span style="font-weight: 600;">#ses-sohbet</span>
                         <div id="voice-user-list" style="margin-top: 5px; padding-left: 10px;">
-                            <span style="color: #72767d;">Bağlantı bekleniyor...</span>
+                            <span style="color: var(--text-secondary);">Kimse yok.</span>
                         </div>
                     </div>
                 </div>
@@ -483,7 +397,7 @@
             <div id="voice-status">Bağlantı Kapalı</div>
 
             <button id="join-voice-button">Sesli Kanala Katıl</button>
-            <button id="end-call-button">Aramayı Sonlandır</button>
+            <button id="end-call-button" style="display: none;">Aramayı Sonlandır</button>
 
             <button id="logout-button">Çıkış Yap</button>
         </div>
@@ -496,6 +410,7 @@
                 </div>
             
             <form id="message-form">
+                <div id="user-message-avatar" class="msg-avatar" style="background-color: #5865f2;"></div>
                 <div id="media-buttons">
                     <button type="button" id="image-upload-button" title="Resim Gönder">🖼️</button>
                     <button type="button" id="audio-record-button" title="Ses Kaydı Gönder">🎤</button>
@@ -504,14 +419,16 @@
                 <button type="submit">Gönder</button>
             </form>
             
-            <input type="file" id="media-file-input" style="display: none;" accept="image/*, audio/mp3, audio/wav">
+            <input type="file" id="media-file-input" style="display: none;" accept="image/*, audio/mp3, audio/wav, audio/webm">
             <div id="upload-status"></div>
+            
+            <input type="hidden" id="editing-message-key" value="">
         </div>
 
     </div>
 
     <script>
-        // Firebase Yapılandırması (Aynı)
+        // 🔥🔥🔥 DÜZELTİLMİŞ Firebase Yapılandırması 🔥🔥🔥
         const firebaseConfig = {
             apiKey: "AIzaSyA49KR-d9hN6QXXcvZ68CfYLpMulad8p50",
             authDomain: "multiplayer-chat-552f7.firebaseapp.com",
@@ -519,19 +436,19 @@
             projectId: "multiplayer-chat-552f7",
             messagingSenderId: "658594907764",
             appId: "1:658594907764:web:18ca661bd9dd9f504df321",
-            measurementId: "G-9JMN9DMG82"
+            measurementId: "G-9JMN9DMG82",
+            // HATA ÇÖZÜMÜ: storageBucket eklendi
+            storageBucket: "multiplayer-chat-552f7.appspot.com" 
         };
 
-        // Firebase'i Başlat
         firebase.initializeApp(firebaseConfig);
 
-        // Firebase Referansları
         const auth = firebase.auth();
         const database = firebase.database();
         const storage = firebase.storage(); 
         const channelsRef = database.ref('channels'); 
         const usersRef = database.ref('users'); 
-        const voiceSignalRef = database.ref('voice_signals/ses-sohbet'); 
+        const voiceSignalRef = database.ref('webrtc_signals/ses-sohbet'); 
 
         // DOM Elementleri
         const authModal = document.getElementById('auth-modal');
@@ -543,70 +460,215 @@
         const messageInput = document.getElementById('message-input');
         const messagesContainer = document.getElementById('messages');
         const logoutButton = document.getElementById('logout-button');
-        const channelsList = document.getElementById('channels');
-        const createChannelButton = document.getElementById('create-channel-button');
-        const channelHeader = document.getElementById('channel-header');
-        
-        // Ses DOM Elementleri
         const joinVoiceButton = document.getElementById('join-voice-button');
         const endCallButton = document.getElementById('end-call-button');
         const voiceStatus = document.getElementById('voice-status');
-        const remoteAudio = document.getElementById('remote-audio');
-        const voiceUserList = document.getElementById('voice-user-list'); // YENİ DOM
-        
-        // Medya DOM Elementleri
+        const voiceUserList = document.getElementById('voice-user-list');
         const imageUploadButton = document.getElementById('image-upload-button');
         const audioRecordButton = document.getElementById('audio-record-button');
         const mediaFileInput = document.getElementById('media-file-input');
         const uploadStatus = document.getElementById('upload-status');
+        const userMessageAvatar = document.getElementById('user-message-avatar');
+        const contextMenu = document.getElementById('context-menu');
+        const editingMessageKeyInput = document.getElementById('editing-message-key');
+        const profilePhotoInput = document.getElementById('profile-photo-input');
+        const profilePhotoPreview = document.getElementById('profile-photo-preview');
+        const channelHeader = document.getElementById('channel-header');
+        const channelsDiv = document.getElementById('channels');
 
-        // Mevcut Durum
+        // Durumlar
         let currentUser = null;
         let currentUserId = null;
         let activeChannelId = 'genel-sohbet'; 
         let activeMessagesRef = null;
-        
-        // Ses Durumları
-        let peer = null; 
+        let profilePhotoFile = null;
+
+        // WebRTC Durumları
         let localStream = null; 
-        let currentCall = null; 
+        let rtcConnection = null; 
+        let targetUserId = null; 
         let mediaRecorder = null;
         let audioChunks = [];
+        
+        const iceServers = {
+            'iceServers': [
+                { 'urls': 'stun:stun.l.google.com:19302' },
+                { 'urls': 'stun:stun1.l.google.com:19302' },
+            ]
+        };
 
         // --- Yardımcı Fonksiyonlar ---
-        function scrollToBottom() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+        function scrollToBottom() { messagesContainer.scrollTop = messagesContainer.scrollHeight; }
         
-        function updateMessagePlaceholder() {
-            const channelName = document.querySelector(`.channel-item.active`)?.textContent || `#${activeChannelId}`;
-            messageInput.placeholder = `${channelName} kanalına mesaj gönderin`;
-            channelHeader.textContent = channelName;
+        function resetEditing() {
+            editingMessageKeyInput.value = '';
+            messageInput.placeholder = "Mesaj Gönderin";
+            messageInput.value = '';
+            messageInput.classList.remove('editing-message');
         }
-        
-        // --- YENİ: Sesli Kullanıcı Listesini Güncelleme Fonksiyonu ---
 
+        // --- WebRTC ve Sesli Sohbet Fonksiyonları ---
+
+        function initializeWebRTC() {
+            rtcConnection = new RTCPeerConnection(iceServers);
+            
+            rtcConnection.onicecandidate = ({ candidate }) => {
+                if (candidate) {
+                    if (targetUserId) {
+                        voiceSignalRef.child(targetUserId).child('ice').push({
+                            senderId: currentUserId,
+                            candidate: candidate
+                        });
+                    }
+                }
+            };
+
+            rtcConnection.ontrack = (event) => {
+                if (event.track.kind === 'audio') {
+                    document.getElementById('remote-audio').srcObject = event.streams[0];
+                    voiceStatus.textContent = "Ses Bağlantısı Aktif!";
+                }
+            };
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    rtcConnection.addTrack(track, localStream);
+                });
+            }
+        }
+        
+        async function getMediaStream() {
+            try {
+                if (localStream) return localStream; 
+                
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                voiceStatus.textContent = "Mikrofon Aktif. Sesli Kanala Katılın.";
+                return localStream;
+            } catch (err) {
+                console.error("Mikrofon erişimi reddedildi:", err);
+                voiceStatus.textContent = "Mikrofon izni reddedildi!";
+                localStream = null;
+                return null;
+            }
+        }
+        
+        async function startCall(remoteUserId, stream) {
+            targetUserId = remoteUserId;
+            voiceStatus.textContent = `Arama Yapılıyor: ${remoteUserId.substring(0, 4)}...`;
+            
+            initializeWebRTC();
+
+            const offer = await rtcConnection.createOffer();
+            await rtcConnection.setLocalDescription(offer);
+
+            voiceSignalRef.child(targetUserId).child('offers').push({
+                senderId: currentUserId,
+                offer: offer
+            });
+            
+            joinVoiceButton.style.display = 'none';
+            endCallButton.style.display = 'block';
+        }
+
+        async function handleOffer(senderId, offer) {
+            targetUserId = senderId;
+            voiceStatus.textContent = `Gelen Arama: ${senderId.substring(0, 4)}...`;
+            
+            const stream = await getMediaStream();
+            if (!stream) return;
+            
+            initializeWebRTC();
+            
+            await rtcConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+            const answer = await rtcConnection.createAnswer();
+            await rtcConnection.setLocalDescription(answer);
+
+            voiceSignalRef.child(senderId).child('answers').push({
+                senderId: currentUserId,
+                answer: answer
+            });
+            
+            joinVoiceButton.style.display = 'none';
+            endCallButton.style.display = 'block';
+        }
+
+        async function handleAnswer(answer) {
+            if (rtcConnection && !rtcConnection.currentRemoteDescription) {
+                await rtcConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                voiceStatus.textContent = `Bağlantı Kuruldu!`;
+            }
+        }
+
+        function setupSignalListeners() {
+            if (!currentUserId) return;
+            
+            voiceSignalRef.child(currentUserId).child('offers').on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                if (data.senderId !== currentUserId) {
+                    handleOffer(data.senderId, data.offer);
+                }
+                snapshot.ref.remove();
+            });
+            
+            voiceSignalRef.child(currentUserId).child('answers').on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                if (data.senderId !== currentUserId) {
+                    handleAnswer(data.answer);
+                }
+                snapshot.ref.remove();
+            });
+
+            voiceSignalRef.child(currentUserId).child('ice').on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                if (rtcConnection && data.candidate) {
+                    rtcConnection.addIceCandidate(new RTCIceCandidate(data.candidate))
+                        .catch(e => console.error("ICE aday hatası:", e));
+                }
+                snapshot.ref.remove();
+            });
+        }
+        
+        function endCall() {
+            if (rtcConnection) { rtcConnection.close(); rtcConnection = null; }
+            if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+            
+            document.getElementById('remote-audio').srcObject = null;
+            targetUserId = null;
+            
+            if(currentUserId) {
+                 voiceSignalRef.child(currentUserId).remove();
+            }
+            
+            joinVoiceButton.style.display = 'block';
+            endCallButton.style.display = 'none';
+            voiceStatus.textContent = "Bağlantı Kapalı";
+        }
+        
+        // --- Kullanıcı Listesini Güncelleme (RTC için) ---
         function updateVoiceUserList() {
-            // Veritabanındaki sesli kanal sinyallerini dinle
+            voiceSignalRef.off('value'); 
             voiceSignalRef.on('value', (snapshot) => {
                 voiceUserList.innerHTML = '';
                 const usersInVoice = snapshot.val();
                 let userCount = 0;
 
                 if (usersInVoice) {
-                    
-                    // Kullanıcıların verilerini çekmek için toplu işlem
                     const userPromises = Object.keys(usersInVoice).map(userId => {
-                         return usersRef.child(userId).once('value');
+                        if (usersInVoice[userId].status === 'online') {
+                            return usersRef.child(userId).once('value');
+                        }
+                        return null;
                     });
 
-                    Promise.all(userPromises).then(snapshots => {
+                    Promise.all(userPromises.filter(p => p !== null)).then(snapshots => {
+                        voiceUserList.innerHTML = '';
+
                         snapshots.forEach(userSnap => {
                             const userData = userSnap.val();
                             if (userData) {
                                 const userDiv = document.createElement('div');
                                 userDiv.className = 'voice-user';
-                                
                                 userDiv.textContent = userData.username; 
 
                                 if (userSnap.key === currentUserId) {
@@ -619,303 +681,146 @@
                         });
 
                         if (userCount === 0) {
-                             voiceUserList.innerHTML = '<span style="color: #72767d;">Kimse yok.</span>';
+                             voiceUserList.innerHTML = '<span style="color: var(--text-secondary);">Kimse yok.</span>';
                         }
                     });
-                    
                 } else {
-                    voiceUserList.innerHTML = '<span style="color: #72767d;">Kimse yok.</span>';
+                    voiceUserList.innerHTML = '<span style="color: var(--text-secondary);">Kimse yok.</span>';
                 }
             });
         }
         
-        // --- PeerJS ve Sesli Sohbet Fonksiyonları ---
-
-        function initializePeer(userId) {
-            if (peer) {
-                return;
-            }
-            
-            peer = new Peer(userId, {
-                host: 'peerjs-server.herokuapp.com',
-                port: 443,
-                secure: true,
-                debug: 2 
-            });
-
-            peer.on('open', (id) => {
-                console.log('PeerJS ID:', id);
-                voiceStatus.textContent = "Bağlantı Hazır. Kanala Katılın.";
-                
-                // Durumumuzu Firebase'e kaydet (online)
-                voiceSignalRef.child(id).set({ 
-                    username: currentUser.username, 
-                    status: 'online', 
-                    timestamp: firebase.database.ServerValue.TIMESTAMP 
-                });
-                
-                // Kullanıcı listesi dinlemesini başlat
-                updateVoiceUserList(); 
-            });
-
-            peer.on('error', (err) => {
-                console.error('PeerJS Hatası:', err);
-                voiceStatus.textContent = `Hata: ${err.type}. Yeniden Dene.`;
-            });
-            
-            peer.on('call', (call) => {
-                if (localStream) {
-                    answerCall(call, localStream);
-                } else {
-                    getMediaStream().then(stream => {
-                        if (stream) answerCall(call, stream);
-                        else call.close();
-                    }).catch(() => call.close());
-                }
-            });
-        }
-        
-        async function getMediaStream() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                voiceStatus.textContent = "Mikrofon Aktif. Sesli Kanala Katılın.";
-                return localStream;
-            } catch (err) {
-                console.error("Mikrofon erişimi reddedildi:", err);
-                voiceStatus.textContent = "Mikrofon izni reddedildi!";
-                localStream = null;
-                return null;
-            }
-        }
-        
-        function startCall(targetPeerId, stream) {
-            currentCall = peer.call(targetPeerId, stream);
-
-            currentCall.on('stream', (remoteStream) => {
-                playRemoteStream(remoteStream);
-            });
-            
-            currentCall.on('close', endCall);
-            currentCall.on('error', (err) => { console.error("Arama Hatası:", err); endCall(); });
-
-            joinVoiceButton.style.display = 'none';
-            endCallButton.style.display = 'block';
-            voiceStatus.textContent = `Arama Yapılıyor: ${targetPeerId}`;
-        }
-        
-        function answerCall(call, stream) {
-            currentCall = call;
-            call.answer(stream); 
-
-            call.on('stream', (remoteStream) => {
-                playRemoteStream(remoteStream);
-            });
-            
-            call.on('close', endCall);
-            call.on('error', (err) => { console.error("Arama Cevaplama Hatası:", err); endCall(); });
-            
-            joinVoiceButton.style.display = 'none';
-            endCallButton.style.display = 'block';
-            voiceStatus.textContent = `Bağlandı: ${call.peer}`;
-        }
-        
-        function playRemoteStream(remoteStream) {
-            remoteAudio.srcObject = remoteStream;
-            voiceStatus.textContent = "Ses Bağlantısı Aktif!";
-        }
-        
-        function endCall() {
-            if (currentCall) {
-                currentCall.close();
-                currentCall = null;
-            }
-
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            
-            remoteAudio.srcObject = null;
-            
-            // Firebase sinyalini sil
-            if (currentUserId && voiceSignalRef) {
-                 voiceSignalRef.child(currentUserId).remove();
-            }
-            
-            joinVoiceButton.style.display = 'block';
-            endCallButton.style.display = 'none';
-            voiceStatus.textContent = "Bağlantı Kapalı";
-        }
-        
-        endCallButton.addEventListener('click', endCall);
-
-
         joinVoiceButton.addEventListener('click', async () => {
-            if (!peer) {
-                initializePeer(currentUserId);
-            }
+            if (rtcConnection) { voiceStatus.textContent = "Zaten bağlısınız."; return; }
             
             const stream = await getMediaStream();
             if (!stream) return;
 
-            // Kendimiz hariç rastgele birini bul (P2P bağlantısı için)
-            voiceSignalRef.once('value', (snapshot) => {
-                const peers = snapshot.val();
-                let targetPeerId = null;
-
-                for (const peerId in peers) {
-                    if (peerId !== currentUserId) {
-                        targetPeerId = peerId;
-                        break; 
+            voiceSignalRef.child(currentUserId).set({
+                status: 'online',
+                username: currentUser.username,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                voiceSignalRef.once('value', (snapshot) => {
+                    const peers = snapshot.val();
+                    let target = null;
+                    
+                    if (peers) {
+                        for (const userId in peers) {
+                            if (userId !== currentUserId && peers[userId].status === 'online') {
+                                target = userId;
+                                break; 
+                            }
+                        }
                     }
-                }
 
-                if (targetPeerId) {
-                    startCall(targetPeerId, stream);
-                } else {
-                    voiceStatus.textContent = "Kanalda kimse yok. Birini bekleyin.";
-                    joinVoiceButton.style.display = 'none';
-                    endCallButton.style.display = 'block'; 
-                }
+                    if (target) {
+                        startCall(target, stream);
+                    } else {
+                        voiceStatus.textContent = "Kanalda kimse yok. Gelen aramayı bekleyin.";
+                        joinVoiceButton.style.display = 'none';
+                        endCallButton.style.display = 'block'; 
+                    }
+                });
             });
         });
+        endCallButton.addEventListener('click', endCall);
+
 
         // --- Kanal Yönetimi ---
         
-        createChannelButton.addEventListener('click', () => {
-            const channelName = prompt("Oluşturmak istediğiniz sohbet kanalının adını girin (Örn: oyun, film):");
-            if (channelName) {
-                const safeName = channelName.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-                if (safeName) {
-                     channelsRef.child(safeName).set({
-                        name: safeName,
-                        title: channelName,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP
-                    }).catch(error => {
-                        alert("Kanal oluşturulamadı: " + error.message);
-                    });
-                }
-            }
-        });
-
-
-        function loadChannels() {
-            channelsRef.child('genel-sohbet').once('value', (snapshot) => {
-                if (!snapshot.exists()) {
-                    channelsRef.child('genel-sohbet').set({
-                        name: 'genel-sohbet',
-                        title: '#genel-sohbet',
-                        createdAt: firebase.database.ServerValue.TIMESTAMP
-                    });
-                }
-            });
-            
-            channelsRef.on('value', (snapshot) => {
-                channelsList.innerHTML = ''; 
-                
-                snapshot.forEach((childSnapshot) => {
-                    const channelId = childSnapshot.key;
-                    
-                    const channelDiv = document.createElement('div');
-                    channelDiv.className = 'channel-item';
-                    channelDiv.textContent = `#${channelId}`;
-                    channelDiv.dataset.id = channelId;
-
-                    if (channelId === activeChannelId) {
-                        channelDiv.classList.add('active');
-                    }
-
-                    channelDiv.addEventListener('click', () => {
-                        switchChannel(channelId);
-                    });
-                    
-                    channelsList.appendChild(channelDiv);
-                });
-                
-                if (!activeChannelId || !document.querySelector(`[data-id="${activeChannelId}"]`)) {
-                    const firstChannel = snapshot.val() ? Object.keys(snapshot.val())[0] : 'genel-sohbet';
-                    if (firstChannel) {
-                         switchChannel(firstChannel);
-                    }
-                }
-            });
-        }
-        
-        function switchChannel(newChannelId) {
-            if (newChannelId === activeChannelId) return;
-
-            if (activeMessagesRef) {
-                activeMessagesRef.off('child_added');
-            }
-            
-            document.querySelectorAll('.channel-item').forEach(item => item.classList.remove('active'));
-            document.querySelector(`[data-id="${newChannelId}"]`)?.classList.add('active');
-
-            activeChannelId = newChannelId;
-            messagesContainer.innerHTML = ''; 
-            
+        function switchChannel(channelId) {
+            if (activeMessagesRef) { activeMessagesRef.off(); }
+            messagesContainer.innerHTML = '';
+            activeChannelId = channelId;
+            channelHeader.textContent = '#' + channelId;
             activeMessagesRef = database.ref(`messages/${activeChannelId}`);
             loadMessages();
-            updateMessagePlaceholder();
-        }
-
-        // --- Mesaj Yönetimi (Medya İçeriği Destekli) ---
-        
-        function loadMessages() {
-            if (!activeMessagesRef) {
-                activeMessagesRef = database.ref(`messages/${activeChannelId}`);
-            }
             
-            activeMessagesRef.on('child_added', (snapshot) => {
-                const message = snapshot.val();
-                
-                const display = (userData) => {
-                    displayMessage(
-                        snapshot.key, 
-                        userData.username || message.username, 
-                        message.text, 
-                        userData.avatarColor || message.avatarColor, 
-                        userData.avatarInitial || message.avatarInitial, 
-                        message.timestamp,
-                        message.mediaUrl, 
-                        message.mediaType 
-                    );
-                    scrollToBottom();
-                };
-
-                if (message.avatarColor) {
-                    display(message); 
-                } else {
-                    usersRef.child(message.userId).once('value').then(userSnap => {
-                        const userData = userSnap.val() || {};
-                        display(userData);
-                    });
+            document.querySelectorAll('.channel-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.id === channelId) {
+                    item.classList.add('active');
                 }
             });
         }
+        
+        function loadChannels() {
+            channelsRef.on('child_added', (snapshot) => {
+                const channelId = snapshot.key;
+                const channelDiv = document.createElement('div');
+                channelDiv.className = 'channel-item';
+                channelDiv.dataset.id = channelId;
+                channelDiv.textContent = channelId;
+                channelDiv.onclick = () => switchChannel(channelId);
+                channelsDiv.appendChild(channelDiv);
+                
+                if (channelId === activeChannelId) {
+                    channelDiv.classList.add('active');
+                }
+            });
+        }
+        
+        document.getElementById('create-channel-button').addEventListener('click', () => {
+            const newChannelId = prompt("Yeni kanal adı (Küçük harf, boşluksuz):");
+            if (newChannelId && newChannelId.trim() !== '') {
+                const normalizedId = newChannelId.trim().toLowerCase().replace(/\s/g, '-');
+                channelsRef.child(normalizedId).set({ name: newChannelId }).then(() => {
+                    switchChannel(normalizedId);
+                });
+            }
+        });
+        
+        // --- Mesaj Yönetimi ve Medya ---
+        
+        function displayMessage(key, username, text, avatarColor, avatarInitial, avatarUrl, timestamp, mediaUrl = null, mediaType = null) {
+            let messageDiv = document.querySelector(`.message[data-key="${key}"]`);
+            const isNew = !messageDiv;
 
-        function displayMessage(key, username, text, avatarColor, avatarInitial, timestamp, mediaUrl = null, mediaType = null) {
-            if (document.querySelector(`.message[data-key="${key}"]`)) return;
+            if (isNew) {
+                messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.dataset.key = key;
+                messageDiv.addEventListener('contextmenu', (e) => showContextMenu(e, key, text));
+            }
             
             const date = new Date(timestamp);
             const timeString = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            messageDiv.dataset.key = key;
+            if (isNew) {
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'msg-avatar';
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'msg-content';
+                const headerDiv = document.createElement('div');
+                headerDiv.innerHTML = `<span class="msg-username">${username}</span> <span class="msg-timestamp">${timeString}</span>`;
 
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'msg-avatar';
-            avatarDiv.style.backgroundColor = avatarColor || '#7289da'; 
-            avatarDiv.textContent = avatarInitial || username.charAt(0).toUpperCase();
+                contentDiv.appendChild(headerDiv);
+                messageDiv.appendChild(avatarDiv);
+                messageDiv.appendChild(contentDiv);
+            }
 
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'msg-content';
+            const avatarDiv = messageDiv.querySelector('.msg-avatar');
+            const contentDiv = messageDiv.querySelector('.msg-content');
             
-            const headerDiv = document.createElement('div');
-            headerDiv.innerHTML = `<span class="msg-username">${username}</span> <span class="msg-timestamp">${timeString}</span>`;
+            // Avatarı Güncelle
+            if (avatarUrl) {
+                avatarDiv.style.backgroundImage = `url('${avatarUrl}')`;
+                avatarDiv.classList.add('has-photo');
+                avatarDiv.style.backgroundColor = 'transparent';
+                avatarDiv.textContent = '';
+            } else {
+                avatarDiv.style.backgroundImage = 'none';
+                avatarDiv.classList.remove('has-photo');
+                avatarDiv.style.backgroundColor = avatarColor || '#7289da'; 
+                avatarDiv.textContent = avatarInitial || username.charAt(0).toUpperCase();
+            }
 
-            contentDiv.appendChild(headerDiv);
+            // İçeriği Güncelle
+            let textP = messageDiv.querySelector('.msg-text');
+            if (textP) textP.remove();
+            let mediaElement = messageDiv.querySelector('.msg-media');
+            if (mediaElement) mediaElement.remove();
 
             if (mediaUrl && mediaType) {
                 if (mediaType.startsWith('image/')) {
@@ -933,157 +838,240 @@
             }
 
             if (text) {
-                const textP = document.createElement('p');
+                textP = document.createElement('p');
                 textP.className = 'msg-text';
                 textP.textContent = text;
                 contentDiv.appendChild(textP);
             }
             
-            messageDiv.appendChild(avatarDiv);
-            messageDiv.appendChild(contentDiv);
-
-            messagesContainer.appendChild(messageDiv);
-        }
-
-        // --- Medya Gönderme İşlemleri ---
-        
-        imageUploadButton.addEventListener('click', () => {
-            mediaFileInput.accept = 'image/*';
-            mediaFileInput.click();
-        });
-
-        mediaFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                uploadMedia(file);
-            }
-            mediaFileInput.value = ''; 
-        });
-
-        audioRecordButton.addEventListener('click', async () => {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-                audioRecordButton.textContent = '🎤';
-                audioRecordButton.style.color = '#7289da';
-                uploadStatus.textContent = "Ses Kaydı Yükleniyor...";
-            } else {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-
-                    mediaRecorder.ondataavailable = (event) => {
-                        audioChunks.push(event.data);
-                    };
-
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { 'type': 'audio/webm' });
-                        uploadMedia(audioBlob, 'audio/webm'); 
-                        stream.getTracks().forEach(track => track.stop()); 
-                    };
-
-                    mediaRecorder.start();
-                    audioRecordButton.textContent = '🔴 KAYIT';
-                    audioRecordButton.style.color = '#f04747'; 
-                    uploadStatus.textContent = "Ses Kaydediliyor (Durdurmak için tekrar basın)...";
-
-                } catch (err) {
-                    console.error("Ses kaydı hatası:", err);
-                    alert("Ses kaydı için mikrofon izni gereklidir.");
-                    uploadStatus.textContent = "Ses kaydı başlatılamadı.";
-                }
-            }
-        });
-
-        async function uploadMedia(file, forcedType = null) {
-            const mediaType = forcedType || file.type;
-            const extension = mediaType.split('/')[1] || 'dat';
-            const fileName = `${currentUserId}_${Date.now()}.${extension}`;
-            const storageRef = storage.ref().child(`chat_media/${activeChannelId}/${fileName}`);
-
-            try {
-                uploadStatus.textContent = `Yükleniyor... (%0)`;
-                const uploadTask = storageRef.put(file);
-
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        uploadStatus.textContent = `Yükleniyor... (%${Math.round(progress)})`;
-                    }, 
-                    (error) => {
-                        console.error("Yükleme Hatası:", error);
-                        uploadStatus.textContent = "Yükleme Başarısız!";
-                    }, 
-                    () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            sendMessage(null, downloadURL, mediaType); 
-                            uploadStatus.textContent = "Yükleme Başarılı!";
-                        });
-                    }
-                );
-            } catch (error) {
-                console.error("Firebase Storage Hatası:", error);
-                uploadStatus.textContent = "Yükleme Başarısız!";
+            if (isNew) {
+                messagesContainer.appendChild(messageDiv);
+                scrollToBottom();
             }
         }
         
-        // --- Mesaj Gönderme ---
-        
-        function sendMessage(text = null, mediaUrl = null, mediaType = null) {
-            if (!currentUser || !activeChannelId) return;
-
-            activeMessagesRef.push({
-                userId: currentUserId,
-                username: currentUser.username,
-                avatarColor: currentUser.avatarColor,
-                avatarInitial: currentUser.avatarInitial,
-                text: text,
-                mediaUrl: mediaUrl,
-                mediaType: mediaType,
-                timestamp: firebase.database.ServerValue.TIMESTAMP 
-            })
-            .then(() => {
-                messageInput.value = ''; 
-                uploadStatus.textContent = '';
-            })
-            .catch(error => {
-                console.error("Mesaj gönderme hatası:", error);
+        function loadMessages() {
+            if (!activeMessagesRef) return;
+            
+            activeMessagesRef.on('child_added', (snapshot) => {
+                const message = snapshot.val();
+                usersRef.child(message.userId).once('value').then(userSnap => {
+                    const userData = userSnap.val() || {};
+                    displayMessage(snapshot.key, userData.username || message.username, message.text, 
+                                   userData.avatarColor || message.avatarColor, userData.avatarInitial || message.avatarInitial, 
+                                   userData.photoUrl || null, message.timestamp, message.mediaUrl, message.mediaType);
+                });
+            });
+            
+            activeMessagesRef.on('child_changed', (snapshot) => {
+                const message = snapshot.val();
+                usersRef.child(message.userId).once('value').then(userSnap => {
+                    const userData = userSnap.val() || {};
+                    displayMessage(snapshot.key, userData.username || message.username, message.text, 
+                                   userData.avatarColor || message.avatarColor, userData.avatarInitial || message.avatarInitial, 
+                                   userData.photoUrl || null, message.timestamp, message.mediaUrl, message.mediaType);
+                });
+            });
+            
+            activeMessagesRef.on('child_removed', (snapshot) => {
+                const messageElement = document.querySelector(`.message[data-key="${snapshot.key}"]`);
+                if(messageElement) { messageElement.remove(); }
             });
         }
+        
+        function sendMessage(text, mediaUrl = null, mediaType = null) {
+            if (!activeMessagesRef) return;
+            
+            const newMessage = {
+                userId: currentUserId,
+                username: currentUser.username,
+                text: text || '',
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                avatarColor: currentUser.avatarColor,
+                avatarInitial: currentUser.avatarInitial,
+                mediaUrl: mediaUrl,
+                mediaType: mediaType
+            };
 
+            activeMessagesRef.push(newMessage).then(() => {
+                messageInput.value = '';
+                uploadStatus.textContent = '';
+                mediaFileInput.value = ''; // Media input'u temizle
+                scrollToBottom();
+            }).catch(error => {
+                console.error("Mesaj gönderme hatası:", error);
+                uploadStatus.textContent = "Gönderme Başarısız!";
+            });
+        }
+        
+        // --- Medya Yükleme ---
+        
+        imageUploadButton.addEventListener('click', () => { mediaFileInput.accept = 'image/*'; mediaFileInput.click(); });
+        mediaFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) { uploadMedia(file); }
+        });
 
+        async function uploadMedia(file) {
+            uploadStatus.textContent = "Yükleniyor... (0%)";
+            
+            const filePath = `chat_media/${activeChannelId}/${currentUserId}/${Date.now()}_${file.name || 'audio_record.webm'}`;
+            const storageRef = storage.ref().child(filePath);
+            const uploadTask = storageRef.put(file);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    uploadStatus.textContent = `Yükleniyor... (${Math.round(progress)}%)`;
+                }, 
+                (error) => {
+                    console.error("Yükleme hatası:", error);
+                    uploadStatus.textContent = "Yükleme Başarısız!";
+                }, 
+                () => {
+                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        const messageText = messageInput.value.trim() || `[${file.type.split('/')[0].toUpperCase()} Eklendi]`;
+                        sendMessage(messageText, downloadURL, file.type);
+                        mediaFileInput.value = '';
+                    });
+                }
+            );
+        }
+        
+        // --- Ses Kaydı ---
+        audioRecordButton.addEventListener('click', () => {
+            if (!mediaRecorder) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = (e) => { audioChunks.push(e.data); };
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        audioChunks = [];
+                        uploadMedia(audioBlob); 
+                    };
+                    mediaRecorder.start();
+                    audioRecordButton.textContent = '⏹️';
+                    uploadStatus.textContent = 'Kayıt Başladı...';
+                }).catch(err => {
+                    alert('Mikrofon erişimi gerekli: ' + err.message);
+                });
+            } else if (mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                audioRecordButton.textContent = '🎤';
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                mediaRecorder = null;
+                uploadStatus.textContent = '';
+            }
+        });
+
+        // --- Sağ Tık Menüsü (Context Menu) ---
+
+        function showContextMenu(e, messageKey, messageText) {
+            e.preventDefault(); 
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.dataset.key = messageKey;
+            contextMenu.dataset.text = messageText;
+            contextMenu.style.display = 'block';
+        }
+
+        document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
+
+        document.getElementById('context-copy').addEventListener('click', () => {
+            const textToCopy = contextMenu.dataset.text;
+            if (textToCopy) { navigator.clipboard.writeText(textToCopy); }
+            contextMenu.style.display = 'none';
+        });
+        
+        document.getElementById('context-edit').addEventListener('click', () => {
+            const key = contextMenu.dataset.key;
+            const text = contextMenu.dataset.text;
+            
+            if (key && currentUserId) {
+                messageInput.value = text;
+                messageInput.placeholder = "Mesaj Düzenleniyor...";
+                messageInput.classList.add('editing-message');
+                editingMessageKeyInput.value = key;
+                contextMenu.style.display = 'none';
+                messageInput.focus();
+            }
+        });
+        
+        document.getElementById('context-delete').addEventListener('click', () => {
+            const key = contextMenu.dataset.key;
+            if (confirm("Bu mesajı silmek istediğinizden emin misiniz?")) {
+                if (key && activeMessagesRef) { activeMessagesRef.child(key).remove(); }
+            }
+            contextMenu.style.display = 'none';
+        });
+
+        // --- Mesaj Gönderme (Submit) ---
         messageForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const text = messageInput.value.trim();
+            const editingKey = editingMessageKeyInput.value;
 
-            if (text) {
-                sendMessage(text);
+            if (editingKey) {
+                if (text) {
+                    activeMessagesRef.child(editingKey).update({
+                        text: text,
+                        edited: true,
+                        editedAt: firebase.database.ServerValue.TIMESTAMP
+                    }).then(() => {
+                        resetEditing();
+                    });
+                } else {
+                    alert("Lütfen bir düzenleme metni girin veya düzenlemeyi iptal edin.");
+                }
+            } else if (text || mediaFileInput.files.length > 0) {
+                 if (mediaFileInput.files.length > 0) {
+                     uploadMedia(mediaFileInput.files[0]);
+                 } else {
+                    sendMessage(text);
+                 }
+            }
+        });
+        
+        // --- Auth ve Profil Yönetimi ---
+
+        profilePhotoPreview.addEventListener('click', () => { profilePhotoInput.click(); });
+        profilePhotoInput.addEventListener('change', (e) => {
+            profilePhotoFile = e.target.files[0];
+            if (profilePhotoFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    profilePhotoPreview.style.backgroundImage = `url('${e.target.result}')`;
+                    profilePhotoPreview.textContent = '';
+                };
+                reader.readAsDataURL(profilePhotoFile);
             }
         });
 
-        // --- Kimlik Doğrulama ve Oturum Yönetimi ---
+        async function uploadProfilePhoto(userId, file) {
+            const storageRef = storage.ref().child(`avatars/${userId}.jpg`);
+            const snapshot = await storageRef.put(file);
+            return snapshot.ref.getDownloadURL();
+        }
 
         signupButton.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const avatarColor = avatarColorInput.value;
 
-            if (!username) {
-                alert("Lütfen bir kullanıcı adı girin.");
-                return;
-            }
-            
+            if (!username) { alert("Lütfen bir kullanıcı adı girin."); return; }
             signupButton.disabled = true;
 
             try {
                 let userCredential = await auth.signInAnonymously();
                 const userId = userCredential.user.uid;
                 
-                const avatarInitial = username.charAt(0).toUpperCase();
-
+                let photoUrl = null;
+                if (profilePhotoFile) { photoUrl = await uploadProfilePhoto(userId, profilePhotoFile); }
+                
                 await usersRef.child(userId).set({
                     username: username,
                     avatarColor: avatarColor,
-                    avatarInitial: avatarInitial
+                    avatarInitial: username.charAt(0).toUpperCase(),
+                    photoUrl: photoUrl
                 });
 
             } catch (error) {
@@ -1093,29 +1081,20 @@
                 signupButton.disabled = false;
             }
         });
-
+        
         logoutButton.addEventListener('click', async () => {
             try {
-                if (peer && currentUserId) {
-                    peer.destroy(); 
-                    peer = null;
-                    voiceSignalRef.child(currentUserId).remove(); 
-                }
                 endCall(); 
-                
+                if (currentUserId) { voiceSignalRef.child(currentUserId).remove(); }
                 await auth.signOut();
             } catch (error) {
                 console.error("Çıkış Hatası:", error);
             }
         });
 
-
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUserId = user.uid;
-                
-                user.getIdToken(true); 
-
                 const userSnapshot = await usersRef.child(currentUserId).once('value');
                 currentUser = userSnapshot.val();
 
@@ -1123,12 +1102,22 @@
                     authModal.style.display = 'none'; 
                     appContainer.style.display = 'flex'; 
                     
-                    loadChannels();
-                    if (activeChannelId) {
-                        switchChannel(activeChannelId); 
+                    // Avatarı güncelle
+                    const avatarElement = document.getElementById('user-message-avatar');
+                    if (currentUser.photoUrl) {
+                        avatarElement.style.backgroundImage = `url('${currentUser.photoUrl}')`;
+                        avatarElement.classList.add('has-photo');
+                        avatarElement.textContent = '';
+                    } else {
+                        avatarElement.style.backgroundColor = currentUser.avatarColor;
+                        avatarElement.textContent = currentUser.avatarInitial;
+                        avatarElement.classList.remove('has-photo');
                     }
                     
-                    initializePeer(currentUserId);
+                    loadChannels();
+                    switchChannel(activeChannelId); 
+                    setupSignalListeners();
+                    updateVoiceUserList(); 
                     
                 } else {
                     authModal.style.display = 'flex';
@@ -1136,28 +1125,19 @@
                 }
 
             } else {
-                if (activeMessagesRef) {
-                    activeMessagesRef.off('child_added');
-                }
-                
-                if (peer) {
-                    peer.destroy();
-                    peer = null;
-                }
+                if (activeMessagesRef) { activeMessagesRef.off(); }
+                voiceSignalRef.off();
                 endCall(); 
                 
                 currentUser = null;
                 currentUserId = null;
-                activeMessagesRef = null; 
                 
                 appContainer.style.display = 'none'; 
                 authModal.style.display = 'flex'; 
-                
                 messagesContainer.innerHTML = ''; 
-                channelsList.innerHTML = '';
+                channelsDiv.innerHTML = '';
             }
         });
-        
     </script>
 </body>
 </html>
